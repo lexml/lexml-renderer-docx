@@ -1,0 +1,247 @@
+<LexML xsi:schemaLocation="http://www.lexml.gov.br/1.0 ../xsd/lexml-br-rigido.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.lexml.gov.br/1.0">
+      <!--       xsi:schemaLocation="http://www.lexml.gov.br/1.0 http://projeto.lexml.gov.br/esquemas/lexml-br-rigido.xsd" > -->
+      <Metadado>
+      <Identificacao URN="urn:lex:br:senado.federal:proposta.emenda.constitucional;pec:LEXML_URN_ID"/>
+    </Metadado>
+      <ProjetoNorma>
+        <Norma>
+          <ParteInicial>
+      <Epigrafe id="epigrafe">PROPOSTA DE EMENDA CONSTITUCIONAL Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA</Epigrafe>
+      <Ementa id="ementa">Altera o <span xlink:href="urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31">art. 31 da Emenda Constitucional nº 19, de 4 de junho de 1998</span>, para prever a inclusão, em quadro em extinção da administração pública federal, de servidor público, de integrante da carreira de policial, civil ou militar, e de pessoa que haja mantido relação ou vínculo funcional, empregatício, estatutário ou de trabalho com a administração pública dos ex-Territórios ou dos Estados do Amapá, de Roraima ou de Rondônia, inclusive suas prefeituras, durante os dez primeiros anos da criação dessas unidades federadas, estabelece o parâmetro remuneratório para a Polícia Militar dos ex-Territórios Federais e dá outras providências.</Ementa>
+      <Preambulo id="preambulo"><p>As mesas da Câmara e do Senado Federal, nos termos do § 3º do art. 60 da Constituição Federal, promulgam a seguinte Emenda ao texto constitucional:</p></Preambulo>
+    </ParteInicial>
+          <Articulacao><Artigo id="art1">
+            
+            
+            <Rotulo>Art. 1º</Rotulo>
+            
+            <Caput id="art1_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31-->
+            
+            
+            <p>O <span xlink:href="urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31">art. 31 da Emenda Constitucional nº 19, de 4 de junho de 1998</span>, passa a vigorar com as seguintes alterações:</p>
+            <Alteracao xml:base="urn:lex:br:federal:emenda.constitucional:1998-06-04;19" id="art1_cpt_alt1">
+              <!--Matches: MatchResult(Map(urn:lex:br:federal:emenda.constitucional:1998-06-04;19 -> MatchByBase(urn:lex:br:federal:emenda.constitucional:1998-06-04;19,1998,Some((6,4)),Map(art31_par1 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par1), art31_par4_inc2 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par4_inc2), art31_par5 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par5), art31_cpt_inc2 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt_inc2), art31_par6 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par6), art31_cpt_inc3 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt_inc3), art31 -> ExactMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31)), art31_par3 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par3), art31_cpt_inc3_ali2 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt_inc3_ali2), art31_cpt_inc1 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt_inc1), art31_par4_inc1 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par4_inc1), art31_par4 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par4), art31_par2 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_par2), art31_cpt -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt), art31_cpt_inc3_ali1 -> PrefixMatch(URN(1998,Some((6,4)),art31,urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31),art31_cpt_inc3_ali1)))))-->
+              <Artigo xlink:href="art31" id="art1_cpt_alt1_art31" abreAspas="s">
+            
+            
+            <Rotulo>Art. 31.</Rotulo>
+            
+            <Caput xlink:href="art31_cpt" id="art1_cpt_alt1_art31_cpt">
+            
+            
+            
+            <p>Poderão integrar, mediante opção, quadro em extinção da administração pública federal:</p>
+            <Inciso xlink:href="art31_cpt_inc1" id="art1_cpt_alt1_art31_cpt_inc1">
+            
+            
+            <Rotulo>I –</Rotulo>
+            <p>a pessoa que revestiu a condição de servidor público federal da administração direta, autárquica ou fundacional, de servidor municipal ou de integrante da carreira de policial, civil ou militar, dos ex-Territórios do Amapá, Roraima e Rondônia e que, comprovadamente, encontrava-se no exercício de suas funções, prestando serviço à administração pública dos ex-Territórios ou de prefeituras neles localizadas, na data em que foram transformados em Estados;</p>
+            
+          </Inciso><Inciso xlink:href="art31_cpt_inc2" id="art1_cpt_alt1_art31_cpt_inc2">
+            
+            
+            <Rotulo>II –</Rotulo>
+            <p>a pessoa que revestiu a condição de servidor público ou de policial, civil ou militar, admitido pelos Estados do Amapá e de Roraima, entre a data da transformação em estado e outubro de 1998, e de Rondônia, entre a data da transformação em estado e dezembro de 1991;</p>
+            
+          </Inciso><Inciso xlink:href="art31_cpt_inc3" id="art1_cpt_alt1_art31_cpt_inc3">
+            
+            
+            <Rotulo>III –</Rotulo>
+            <p>a pessoa que comprove ter revestido a condição de profissional, servidor público, empregado, trabalhador, prestador de serviço, e tenha atuado ou desenvolvido atividade direta ou indireta, mesmo que por interveniência de cooperativa, tendo como tomador do serviço órgão ou entidade pública do ex-Território, do Estado ou de Prefeituras nele localizada, e tenha mantido, nos períodos abaixo discriminados, relação ou vínculo, de caráter efetivo ou não, com a administração pública dos ex-Territórios, dos estados ou das prefeituras neles localizadas ou com empresa pública ou sociedade de economia mista, inclusive as extintas, que haja sido constituída pelos ex-Territórios, pelos Estados ou pelos seus municípios, para atuar em seus âmbitos:</p>
+            <Alinea xlink:href="art31_cpt_inc3_ali1" id="art1_cpt_alt1_art31_cpt_inc3_ali1">
+            
+            
+            <Rotulo>a)</Rotulo>
+            <p>até a data da transformação em estado e outubro de 1998, relativamente aos estados do Amapá e de Roraima;</p>
+            
+          </Alinea><Alinea xlink:href="art31_cpt_inc3_ali2" id="art1_cpt_alt1_art31_cpt_inc3_ali2">
+            
+            
+            <Rotulo>b)</Rotulo>
+            <p>até a data da transformação em estado e dezembro de 1991, relativamente ao estado de Rondônia;</p>
+            
+          </Alinea>
+          </Inciso>
+          </Caput><Paragrafo xlink:href="art31_par1" id="art1_cpt_alt1_art31_par1">
+            
+            
+            <Rotulo>§ 1º</Rotulo>
+            <p>O disposto nos incisos de I a III, do caput, se aplica à pessoa que comprove ter mantido relação ou vinculo de trabalho, de caráter efetivo ou não, com órgãos públicos do Poder Judiciário, do Ministério Público e do Poder Legislativo, incluídos os Tribunais de Contas, dos estados do Amapá, de Roraima de Rondônia e de seus Municípios, nos períodos descritos na forma das alíneas a e b, do inciso III.</p>
+            
+          </Paragrafo><Paragrafo xlink:href="art31_par2" id="art1_cpt_alt1_art31_par2">
+            
+            
+            <Rotulo>§ 2º</Rotulo>
+            <p>O enquadramento referido nos incisos de I a III, do caput, dar-se-á no cargo ou emprego em que foram originariamente admitidos ou equivalente.</p>
+            
+          </Paragrafo><Paragrafo xlink:href="art31_par3" id="art1_cpt_alt1_art31_par3">
+            
+            
+            <Rotulo>§ 3º</Rotulo>
+            <p>As pessoas referidas nos incisos de I a III, do caput, prestarão serviços aos respectivos Estados ou a seus Municípios, na condição de servidores ou empregados cedidos, sem ônus para o cessionário, até seu aproveitamento em órgão ou entidade da administração federal direta, autárquica ou fundacional, podendo os Estados, por conta e delegação da União, adotar os procedimentos necessários à cessão de servidores a seus Municípios.</p>
+            
+          </Paragrafo><Paragrafo xlink:href="art31_par4" id="art1_cpt_alt1_art31_par4">
+            
+            
+            <Rotulo>§ 4º</Rotulo>
+            <p>Para fins do disposto nos incisos de I a III, do caput, são meios probatórios de relação ou vínculo funcional, empregatício, estatutário ou de trabalho, independentemente da existência de vínculo atual, além de todas as provas admitidas em Direito:</p>
+            <Inciso xlink:href="art31_par4_inc1" id="art1_cpt_alt1_art31_par4_inc1">
+            
+            
+            <Rotulo>I –</Rotulo>
+            <p>o contrato, o convênio, o ajuste ou o ato administrativo por meio do qual a pessoa tenha revestido a condição de profissional, empregado, servidor público, prestador de serviço ou trabalhador e tenha atuado ou desenvolvido atividade direta ou indireta, tendo como tomador do serviço órgãos ou entidades públicas do ex-Território, do Estado ou de Prefeitura neles localizada, inclusive mediante a interveniência de cooperativa;</p>
+            
+          </Inciso><Inciso xlink:href="art31_par4_inc2" id="art1_cpt_alt1_art31_par4_inc2">
+            
+            
+            <Rotulo>II –</Rotulo>
+            <p>a retribuição, a remuneração ou o pagamento documentado ou formalizado, à época, mediante depósito em conta-corrente bancária ou emissão de ordem de pagamento, de recibo, de nota de empenho ou de ordem bancária em que se identifique a administração pública do ex-Território, do Estado ou de prefeitura neles localizada como fonte pagadora ou origem dos recursos, assim como aquele realizado à conta de recursos oriundos de fundo de participação ou de fundo especial, inclusive em proveito do pessoal integrante das tabelas especiais.</p>
+            
+          </Inciso>
+          </Paragrafo><Paragrafo xlink:href="art31_par5" id="art1_cpt_alt1_art31_par5">
+            
+            
+            <Rotulo>§ 5º</Rotulo>
+            <p>Além dos meios probatórios de que trata o § 4º deste artigo, o enquadramento referido nos incisos de I a III, do caput, dependerá da comprovação de vínculo de qualquer natureza, por, pelo menos, noventa dias.</p>
+            
+          </Paragrafo><Paragrafo xlink:href="art31_par6" id="art1_cpt_alt1_art31_par6" fechaAspas="s" notaAlteracao="NR">
+            
+            
+            <Rotulo>§ 6º</Rotulo>
+            <p>As pessoas a que se referem este artigo farão jus à percepção de todas as gratificações e dos demais valores que componham a estrutura remuneratória ou salarial dos cargos e empregos em que tenham sido enquadradas, vedando-se reduzi-los ou suprimi-los por motivo de cessão ao Estado ou a seu Município.</p>
+            
+          </Paragrafo>
+          </Artigo>
+            </Alteracao>
+          </Caput>
+          </Artigo><Artigo id="art2">
+            
+            
+            <Rotulo>Art. 2º</Rotulo>
+            
+            <Caput id="art2_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31-->
+            
+            
+            <p>Cabe à União, no prazo máximo de cento e oitenta dias, contado a partir da data de publicação desta Emenda Constitucional, regulamentar o disposto no <span xlink:href="urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31">art. 31 da Emenda Constitucional nº 19, de 4 de junho de 1998</span>, a fim de que se exerça o direito de opção nele previsto.</p>
+            
+          </Caput><Paragrafo id="art2_par1">
+            
+            
+            <Rotulo>§ 1º</Rotulo>
+            <p>Descumprido o prazo de que trata o caput deste artigo, a pessoa a quem assista o direito de opção fará jus ao pagamento de eventuais acréscimos remuneratórios, desde a data de encerramento desse prazo, caso se confirme o seu enquadramento.</p>
+            
+          </Paragrafo><Paragrafo id="art2_par2">
+            
+            
+            <Rotulo>§ 2º</Rotulo>
+            <p>É vedado o pagamento, a qualquer título, de acréscimo remuneratório, ressarcimento, auxílio, salário, retribuição ou valor em virtude de ato ou fato anterior à data de enquadramento da pessoa optante, ressalvado o pagamento de que trata o § 1º deste artigo.</p>
+            
+          </Paragrafo>
+          </Artigo><Artigo id="art3">
+            
+            
+            <Rotulo>Art. 3º</Rotulo>
+            
+            <Caput id="art3_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31-->
+            
+            
+            <p>O direito à opção, nos termos previstos no <span xlink:href="urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31">art. 31 da Emenda Constitucional nº 19, de 4 de junho de 1998</span>, deverá ser exercido no prazo de até cento e oitenta dias, contado a partir da data de regulamentação desta Emenda Constitucional.</p>
+            
+          </Caput><Paragrafo id="art3_par1">
+            
+            
+            <Rotulo>§ 1º</Rotulo>
+            <p>São convalidados todos os direitos já exercidos até a data de regulamentação desta Emenda Constitucional, inclusive nos casos em que, feita a opção, o enquadramento ainda não houver sido efetivado, aplicando-se-lhes, para todos os fins, inclusive o de enquadramento, a legislação vigente à época em que houver sido feita a opção ou, sendo mais benéficas ou favoráveis ao optante, as normas previstas nesta Emenda Constitucional e em seu regulamento.</p>
+            
+          </Paragrafo><Paragrafo id="art3_par2">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:2009-11-11;60--><!--Link: urn:lex:br:federal:emenda.constitucional:2014-05-27;79--><!--Link: urn:lex:br:federal:emenda.constitucional:2017-12-06;98-->
+            
+            <Rotulo>§ 2º</Rotulo>
+            <p>Entre a data de promulgação desta Emenda Constitucional e a de publicação de seu regulamento, o exercício do direito de opção será feito com base nas disposições contidas na <span xlink:href="urn:lex:br:federal:emenda.constitucional:2009-11-11;60">Emenda Constitucional n.º 60 de 11 de novembro de 2009</span>, na <span xlink:href="urn:lex:br:federal:emenda.constitucional:2014-05-27;79">Emenda Constitucional n.º 79 de 27 de maio de 2014</span>, e na <span xlink:href="urn:lex:br:federal:emenda.constitucional:2017-12-06;98">Emenda Constitucional nº 98, de 06 de dezembro de 2017</span>, e em suas normas regulamentares, sem prejuízo do disposto no § 1º deste artigo.</p>
+            
+          </Paragrafo>
+          </Artigo><Artigo id="art4">
+            
+            
+            <Rotulo>Art. 4º</Rotulo>
+            
+            <Caput id="art4_cpt">
+            
+            
+            
+            <p>É reconhecido o vínculo funcional com a União dos servidores do ex-Território do Amapá, a que se refere a Portaria nº 4.481, de 19 de dezembro de 1995, do Ministério da Administração Federal e Reforma do Estado, publicada no Diário Oficial da União de 21 de dezembro de 1995, convalidando-se os atos de gestão, de admissão, aposentadoria, pensão, progressão, movimentação e redistribuição relativos a esses servidores.</p>
+            
+          </Caput>
+          </Artigo><Artigo id="art5">
+            
+            
+            <Rotulo>Art. 5º</Rotulo>
+            
+            <Caput id="art5_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:2014-05-27;79!art7-->
+            
+            
+            <p>O disposto no <span xlink:href="urn:lex:br:federal:emenda.constitucional:2014-05-27;79!art7">art. 7º da Emenda Constitucional nº 79, de 27 de maio de 2014</span>, aplica-se aos servidores que, em iguais condições, hajam sido admitidos pelos Estados de Rondônia até dezembro de 1991, e do Amapá e de Roraima até outubro de 1998.</p>
+            
+          </Caput>
+          </Artigo><Artigo id="art6">
+            
+            
+            <Rotulo>Art. 6º</Rotulo>
+            
+            <Caput id="art6_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:2014-05-27;79!art6-->
+            
+            
+            <p>O disposto no <span xlink:href="urn:lex:br:federal:emenda.constitucional:2014-05-27;79!art6">art. 6º da Emenda Constitucional nº 79, de 27 de maio de 2014</span>, aplica-se aos servidores que, admitidos e lotados pelas Secretarias de Segurança Pública dos Estados de Rondônia até dezembro de 1991, e do Amapá e de Roraima até outubro de 1998, exerciam função policial.</p>
+            
+          </Caput>
+          </Artigo><Artigo id="art7">
+            
+            
+            <Rotulo>Art. 7º</Rotulo>
+            
+            <Caput id="art7_cpt">
+            <!--Link: urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31-->
+            
+            
+            <p>Os soldos, adicionais, benefícios, indenizações, vantagens e direitos remuneratórios concedidos aos policiais e bombeiros militares dos ex-Territórios do Amapá, de Roraima e de Rondônia, e aos policiais e bombeiros militares contratados no período a que se refere as alíneas a e b, do item III, do <span xlink:href="urn:lex:br:federal:emenda.constitucional:1998-06-04;19!art31">artigo 31, da Emenda Constitucional nº 19, de 4 de junho de 1998</span>, com a redação dada pelo art. 1º desta Emenda, que hajam sido incorporados a Quadro em Extinção da União, não poderão ser inferiores aos soldos, adicionais, benefícios, indenizações, vantagens e direitos remuneratórios pagos aos policiais e bombeiros militares do Distrito Federal, consideradas quaisquer espécies, mesmo que concedidas em caráter privativo, exclusivo ou com denominação diversa” (NR)</p>
+            
+          </Caput>
+          </Artigo><Artigo id="art8">
+            
+            
+            <Rotulo>Art. 8º</Rotulo>
+            
+            <Caput id="art8_cpt">
+            
+            
+            
+            <p>As disposições desta Emenda Constitucional aplicam-se aos aposentados e pensionistas, civis e militares, vinculados aos respectivos regimes próprios de previdência, vedado o pagamento, a qualquer título, de valores referentes a períodos anteriores à sua publicação.</p>
+            
+          </Caput><Paragrafo id="art8_par1u">
+            <!--Link: urn:lex:br:federal:constituicao:1988-10-05;1988!art201_par9-->
+            
+            <Rotulo>Parágrafo único.</Rotulo>
+            <p>Haverá compensação financeira entre os regimes próprios de previdência por ocasião da aposentação ou da inclusão de aposentados e pensionistas em quadro em extinção da União, observado o disposto no <span xlink:href="urn:lex:br:federal:constituicao:1988-10-05;1988!art201_par9">§ 9º do art. 201 da Constituição Federal</span>.</p>
+            
+          </Paragrafo>
+          </Artigo><Artigo id="art9">
+            
+            
+            <Rotulo>Art. 9º</Rotulo>
+            
+            <Caput id="art9_cpt">
+            
+            
+            
+            <p>Esta Emenda Constitucional entra em vigor na data de sua publicação.</p>
+            
+          </Caput>
+          </Artigo></Articulacao>
+        </Norma>
+      </ProjetoNorma>
+    </LexML>
