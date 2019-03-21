@@ -64,12 +64,12 @@ trait LexmlRenderable {
   def attrData : Seq[AttrData] = Seq()
 }
 
+/* xsi:schemaLocation={s"http://www.lexml.gov.br/1.0 http://projeto.lexml.gov.br/esquemas/lexml-br-${xml_params.lexml_schema}.xsd"}> */
 final case class LexmlDocument(metadado : MetaSection, documentContent : DocumentContent) extends LexmlRenderable {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (<LexML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns="http://www.lexml.gov.br/1.0"
-       xmlns:math="http://www.ora.com/XSLTCookbook/math"
-       xsi:schemaLocation={s"http://www.lexml.gov.br/1.0 http://projeto.lexml.gov.br/esquemas/lexml-br-${xml_params.lexml_schema}.xsd"}>
+       xmlns:math="http://www.ora.com/XSLTCookbook/math">      
  { metadado.xml("Metadado") }
  { documentContent.xml() }
  </LexML>)
@@ -238,30 +238,64 @@ object AnexoDocumentoGenerico extends LexmlXmlParsing {
 }
 
 final case class ParteInicial(
-  formulacaoPromulgacao : Option[textoSimplesType] = None,
-  epigrafe : Option[inlineReq] = None,
-  ementa : Option[inlineReq] = None,
-  preambulo : Option[textoType] = None  
+  formulacaoPromulgacao : Option[FormulaPromulgacao] = None,
+  epigrafe : Option[Epigrafe] = None,
+  ementa : Option[Ementa] = None,
+  preambulo : Option[Preambulo] = None  
 )  extends LexmlRenderable {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
     <ParteInicial>
-			{formulacaoPromulgacao.map{x => x.xml("FormulaPromulgacao")}.getOrElse(NodeSeq.Empty)}
-			{epigrafe.map{x => x.xml("Epigrafe")}.getOrElse(NodeSeq.Empty)}
-			{ementa.map{x => x.xml("Ementa")}.getOrElse(NodeSeq.Empty)}
-			{preambulo.map{x => x.xml("Preambulo")}.getOrElse(NodeSeq.Empty)}
+			{formulacaoPromulgacao.map{x => x.xml()}.getOrElse(NodeSeq.Empty)}
+			{epigrafe.map{x => x.xml()}.getOrElse(NodeSeq.Empty)}
+			{ementa.map{x => x.xml()}.getOrElse(NodeSeq.Empty)}
+			{preambulo.map{x => x.xml()}.getOrElse(NodeSeq.Empty)}
 		</ParteInicial>
       )
 }
 
 object ParteInicial extends LexmlXmlParsing {
   def apply(xml : Elem) : ParteInicial = {
-    val formulacaoPromulgacao = xml.elemOpt("FormulacaoPromulgacao").map{textoSimplesType(_)}
-    val epigrafe = xml.elemOpt("Epigrafe").map{inlineReq(_)}
-    val ementa = xml.elemOpt("Ementa").map{inlineReq(_)}
-    val preambulo = xml.elemOpt("Preambulo").map{textoType(_)}
+    val formulacaoPromulgacao = xml.elemOpt("FormulacaoPromulgacao").map{FormulaPromulgacao(_)}
+    val epigrafe = xml.elemOpt("Epigrafe").map{Epigrafe(_)}
+    val ementa = xml.elemOpt("Ementa").map{Ementa(_)}
+    val preambulo = xml.elemOpt("Preambulo").map{Preambulo(_)}
     ParteInicial(formulacaoPromulgacao,epigrafe,ementa,preambulo)
   }
 }
+
+final case class FormulaPromulgacao(texto : textoSimplesType) extends LexmlRenderable with parteInicialElement {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
+    texto.xml("FormulaPromulgacao")
+}
+object FormulaPromulgacao {
+  def apply(xml : Elem) : FormulaPromulgacao = FormulaPromulgacao(textoSimplesType(xml))
+}
+
+final case class Epigrafe(contents : inlineReq) extends LexmlRenderable with parteInicialElement {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
+    contents.xml("Epigrafe")
+}
+object Epigrafe {
+  def apply(xml : Elem) : Epigrafe = Epigrafe(inlineReq(xml))
+}
+
+final case class Ementa(contents : inlineReq) extends LexmlRenderable with parteInicialElement {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
+    contents.xml("Ementa")
+}
+object Ementa {
+  def apply(xml : Elem) : Ementa = Ementa(inlineReq(xml))
+}
+
+final case class Preambulo(contents : inlineReq) extends LexmlRenderable with parteInicialElement {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
+    contents.xml("Preambulo")
+}
+object Preambulo {
+  def apply(xml : Elem) : Preambulo = Preambulo(inlineReq(xml))
+}
+
+
 
 final case class Articulacao(coreopt : AG_coreopt = AG_coreopt(), elems : Seq[hierElement] = Seq()) extends LexmlRenderable  {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
@@ -504,11 +538,8 @@ final case class inlineReq(
     
 object inlineReq  extends LexmlXmlParsing {
   def apply(xml : Elem) : inlineReq = {
-   lazy val elems = xml.child.to[Seq].collect { 
-     case e : Elem if inlineElement.labels(e.label) => inlineElement(e)
-     case e : Elem if markerElement.labels(e.label) => markerElement(e)
-     case t : scala.xml.Text => new InlineText(t.text)
-   } 
+   lazy val elems = 
+     xml.child.to[Seq].collect(inlineComponent.select)
    inlineReq(AG_corereq(xml),elems)
   }
 }  
@@ -532,7 +563,18 @@ object inline  extends LexmlXmlParsing {
   }
 }
  
-trait inlineComponent extends Product with LexmlRenderable 
+sealed trait inlineComponent extends Product with LexmlRenderable
+
+object inlineComponent extends LexmlXmlParsing {  
+  def select : PartialFunction[Node,inlineComponent] = {    
+      case e : Elem if inlineElement.labels(e.label) => inlineElement(e)
+      case e : Elem if markerElement.labels(e.label) => markerElement(e)
+      case e : Elem if e.label == "p" => P(e)
+      case e : Elem if e.label == "ul" => ul(e)
+      case e : Elem if e.label == "ol" => ol(e)
+      case t : scala.xml.Text => new InlineText(t.text)
+    }   
+}
 
 /*final case class markerreq(corereq : AG_corereq)  extends LexmlRenderable {
   def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
@@ -674,7 +716,7 @@ final case class InlineText(text : String) extends inlineComponent with list_ite
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = Text(text)
 }
 
-trait hierElement extends Product with LexmlRenderable
+sealed trait hierElement extends Product with LexmlRenderable with AlteracaoElement
 
 object hierElement {
   val labels = LXhier.labels ++ Set("AgrupamentoHierarquico")
@@ -684,7 +726,7 @@ object hierElement {
   }
 }
 
-trait ContainerElement extends PartePrincipalPart 
+sealed trait ContainerElement extends PartePrincipalPart with AlteracaoElement
 
 object ContainerElement {
   def labels = HTMLcontainer.labels ++ Set("Agrupamento")
@@ -734,7 +776,7 @@ object blocksreq extends LexmlXmlParsing {
         xml.elemsChoiceP(blockElement.labels).map{blockElement(_)})  
 }
 
-trait blockElement extends PartePrincipalPart
+trait blockElement extends PartePrincipalPart with AlteracaoElement
 
 object blockElement {
   def labels = HTMLblock.labels ++ Set("ConteudoExterno","Bloco")
@@ -1052,7 +1094,9 @@ object LXhierCompleto {
 final case class hierarchy(corereq : AG_corereq,
     rotulo : Option[String] = None,
     nomeAgrupador : Option[inline] = None,
-    agrupamentosHierarquicos : Seq[AgrupamentoHierarquico] = Seq()) extends LexmlRenderable {
+    agrupamentosHierarquicos : Seq[AgrupamentoHierarquico] = Seq(),
+    attrsCitacao : AG_attrsCitacao = AG_attrsCitacao(),
+    linkopt : AG_linkopt = AG_linkopt()) extends LexmlRenderable {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
       <InvalidLabel_11>
 				{rotulo.map{x => <Rotulo>{x}</Rotulo>}.getOrElse(NodeSeq.Empty)}
@@ -1060,6 +1104,7 @@ final case class hierarchy(corereq : AG_corereq,
 				{NodeSeq.fromSeq(agrupamentosHierarquicos.map{_.xml()})}
 			</InvalidLabel_11>
       )
+  override val attrData = Seq(corereq,attrsCitacao,linkopt)
 }
 
 object hierarchy extends LexmlXmlParsing {
@@ -1067,10 +1112,11 @@ object hierarchy extends LexmlXmlParsing {
     AG_corereq(xml),
     xml.elemOpt("Rotulo").map { _.text },
     xml.elemOpt("NomeAgrupador").map { inline(_) },
-    xml.elems("AgrupamentoHierarquico").map { AgrupamentoHierarquico(_) })  
+    xml.elems("AgrupamentoHierarquico").map { AgrupamentoHierarquico(_) },
+    AG_attrsCitacao(xml),AG_linkopt(xml))  
 }
 
-trait LXcontainer extends art_elem 
+trait LXcontainer extends art_elem with AlteracaoElement
 
 object LXcontainer {  
   val labels = Set("Caput","Paragrafo","Inciso","Alinea","Item")
@@ -1139,7 +1185,8 @@ final case class DispositivoType(
   alteracao : Option[AlteracaoType] = None,
   containers : Seq[LXcontainer] = Seq(),
   dispsGenericos : Seq[DispositivoGenerico] = Seq(),
-  pena : Option[PenaType] = None) extends LexmlRenderable {
+  pena : Option[PenaType] = None,
+  attrsCitacao : AG_attrsCitacao = AG_attrsCitacao()) extends LexmlRenderable {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
       <InvalidLabel_12>
 				{tituloDispositivo.map{x => x.xml("TituloDispositivo")}.getOrElse(NodeSeq.Empty)}
@@ -1151,7 +1198,7 @@ final case class DispositivoType(
 				{pena.map{x => x.xml("Pena")}.getOrElse(NodeSeq.Empty)}
 			</InvalidLabel_12>
       )
-   override val attrData = Seq(corereqArt,linkopt)
+   override val attrData = Seq(corereqArt,linkopt,attrsCitacao)
 }
 
 object DispositivoType extends LexmlXmlParsing { 
@@ -1163,14 +1210,16 @@ object DispositivoType extends LexmlXmlParsing {
     val containers = xml.elemsChoiceP(LXcontainer.labels).map{LXcontainer(_)}
     val dispsGenericos = xml.elems("DispositivoGenerico").map{DispositivoGenerico(_)}
     val pena = xml.elemOpt("Pena").map{PenaType(_)}
-    DispositivoType(AG_corereqArt(xml),AG_linkopt(xml),tituloDispositivo,rotulo,pars,alteracao,containers,dispsGenericos,pena)
+    DispositivoType(AG_corereqArt(xml),AG_linkopt(xml),tituloDispositivo,rotulo,pars,alteracao,containers,dispsGenericos,pena,
+        AG_attrsCitacao(xml))
   }
 }
 
 final case class PenaType(corereq : AG_corereq, linkopt : AG_linkopt = AG_linkopt(),
     rotulo : Option[String] = None,
     pars : Seq[inline] = Seq(),
-    dispsGenericos : Seq[DispositivoGenerico] = Seq()) extends LexmlRenderable {
+    dispsGenericos : Seq[DispositivoGenerico] = Seq(),
+    attrsCitacao : AG_attrsCitacao = AG_attrsCitacao()) extends LexmlRenderable {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (
       <Pena>
 				{rotulo.map{x => <Rotulo>{x}</Rotulo>}.getOrElse(NodeSeq.Empty)}
@@ -1178,7 +1227,7 @@ final case class PenaType(corereq : AG_corereq, linkopt : AG_linkopt = AG_linkop
 				{NodeSeq.fromSeq(dispsGenericos.map{_.xml()})}
 			</Pena>
       )
-  override val attrData = Seq(corereq,linkopt)
+  override val attrData = Seq(corereq,linkopt,attrsCitacao)
 }
 
 object PenaType extends LexmlXmlParsing {
@@ -1187,12 +1236,14 @@ object PenaType extends LexmlXmlParsing {
     val pars = xml.elems("p").map{inline(_)}
     val dispsGenericos = xml.elems("DispositivoGenerico").map{DispositivoGenerico(_)}
     PenaType(AG_corereq(xml),AG_linkopt(xml),
-        rotulo,pars,dispsGenericos)        
+        rotulo,pars,dispsGenericos,AG_attrsCitacao(xml))        
   }
 }
 
-final case class AlteracaoType(corereq : AG_corereq,base : Option[String] = None) extends LexmlRenderable {
-  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = (<InvalidLabel_13/>)
+final case class AlteracaoType(corereq : AG_corereq,base : Option[String] = None,
+    contents : Seq[AlteracaoElement] = Seq()) extends LexmlRenderable {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
+    (<InvalidLabel_13>{NodeSeq.fromSeq(contents.map{_.xml()})}</InvalidLabel_13>)
   val localAttrData = new AttrData { 
     def attrSeq = Seq(base.map{x => ((Some("xml"),"base"),x)})
   }
@@ -1201,8 +1252,57 @@ final case class AlteracaoType(corereq : AG_corereq,base : Option[String] = None
 
 object AlteracaoType extends LexmlXmlParsing {
   def apply(xml : Elem) : AlteracaoType = 
-    AlteracaoType(AG_corereq(xml),xml.optAttrNS(Namespaces.xml,"base"))
+    AlteracaoType(AG_corereq(xml),xml.optAttrNS(Namespaces.xml,"base"),
+        xml.elemsChoiceP(AlteracaoElement.labels).map{AlteracaoElement(_)})
 }
+
+//AlteracaoElement: START
+
+sealed trait AlteracaoElement extends Product with LexmlRenderable
+
+object AlteracaoElement extends LexmlXmlParsing {
+  val labels = Set("Omissis") ++
+    parteInicialElement.labels ++
+    hierElement.labels ++
+    blockElement.labels ++
+    LXcontainer.labels
+  def apply(xml : Elem) : AlteracaoElement = xml.label match {
+    case "Omissis" => Omissis(xml)
+    case x if parteInicialElement.labels(x) => parteInicialElement(xml)
+    case x if hierElement.labels(x) => hierElement(xml)
+    case x if blockElement.labels(x) => blockElement(xml)
+    case x if LXcontainer.labels(x) => LXcontainer(xml)
+  }
+}
+
+final case class Omissis(id : String, attrsCitacao : AG_attrsCitacao = AG_attrsCitacao()) extends AlteracaoElement {
+  override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) =
+    (<Omissis/>)
+  private val localAttrData = new AttrData {
+    val attrSeq = Seq(Some((None,"id"),id))
+  }
+  override val attrData = Seq(attrsCitacao,localAttrData)
+}
+
+object Omissis extends LexmlXmlParsing {
+  def apply(xml : Elem) : Omissis =
+    Omissis(xml.attr("id"),AG_attrsCitacao(xml))
+}
+
+sealed trait parteInicialElement extends Product with LexmlRenderable with AlteracaoElement
+
+object parteInicialElement extends LexmlXmlParsing {
+  val labels = Set("FormulaPromulgacao","Epigrafe","Ementa","Preambulo")
+  def apply(xml : Elem)  : parteInicialElement = xml.label match {
+    case "FormulaPromulgacao" => FormulaPromulgacao(xml)
+    case "Epigrafe" => Epigrafe(xml)
+    case "Ementa" => Ementa(xml)
+    case "Preambulo" => Preambulo(xml)
+  }
+}
+
+
+//AlteracaoElement: END
 
 final case class Alteracao(alt : AlteracaoType) extends LXinline {
   override def xml_in(implicit xml_params : LexmlXmlRenderParams = LexmlXmlRenderParams()) = 
@@ -1517,9 +1617,10 @@ object AG_coreopt {
 }
 
 final case class AG_lang(lang : String = "pt-BR") extends AttrData {
-  override def attrSeq = if (lang == "pt-BR") { Seq() } else {
-    Seq(Some(((Some("xml"),"lang"),lang))) }
-  }
+  override def attrSeq = 
+    if (lang == "pt-BR") { Seq() } 
+    else { Seq(Some(((Some("xml"),"lang"),lang))) }
+}
 
 object AG_lang extends LexmlXmlParsing {
   def apply(xml : Elem) : AG_lang = AG_lang(xml.optAttrNS(Namespaces.xml,"lang").getOrElse("pt-BR"))
@@ -1700,6 +1801,26 @@ object AG_cellattrs extends LexmlXmlParsing {
     AG_cellattrs(xml.optAttr("rowspan").map(_.toInt).getOrElse(1),
         xml.optAttr("colspan").map(_.toInt).getOrElse(1))  
 }
+
+final case class AG_attrsCitacao(
+    abreAspas : Boolean = true,
+    fechaAspas : Boolean = true,
+    notaAlteracao : Option[String] = None) extends AttrData {
+  override def attrSeq = Seq(
+     if(abreAspas) { Some((None,"abreAspas") -> "s") } else { None },
+     if(fechaAspas) { Some((None,"fechaAspas") -> "s") } else { None },
+     notaAlteracao.map{x => ((None,"notaAlteracao") -> x) })
+}
+
+object AG_attrsCitacao extends LexmlXmlParsing {
+    def apply(xml : Elem) : AG_attrsCitacao =
+      AG_attrsCitacao(
+          xml.optAttr("abreAspas") == Some("s"),
+          xml.optAttr("fechaAspas") == Some("s"),
+          xml.optAttr("notaAlteracao"))
+ 
+}
+    
 
 /* Attribute Values */
 
