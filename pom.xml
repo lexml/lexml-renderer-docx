@@ -232,6 +232,17 @@
 			<version>6.1.2</version>
 		</dependency>
         
+        <!-- <dependency>
+           <groupId>com.wix</groupId>
+           <artifactId>accord-core_${scala.version}</artifactId>
+           <version>0.7.3</version>
+         </dependency> -->
+         <dependency>
+            <groupId>org.scalameta</groupId>
+            <artifactId>scalameta_${scala.version}</artifactId>
+            <version>4.1.0</version>
+         </dependency>
+        
     </dependencies>
   
   

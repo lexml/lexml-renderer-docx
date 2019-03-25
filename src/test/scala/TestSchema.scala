@@ -1,115 +1,149 @@
-import scala.xml._
 import java.io.File
+import scala.xml.{ Attribute => XmlAttribute, _}
+import br.gov.lexml.schema.model._
 
-sealed abstract class ElemSeqOrGroup extends Product {
-  def rootName : String
+sealed trait OccurPos extends Product {
+  def +(p : OccurPos) : OP_Indirect = OP_Indirect(p, Seq(this))
+  val sortKey : String
 }
 
-sealed abstract class ElemAttrOrGroup extends Product {
-  def rootName : String
+final case class OP_Complex_Root_Element(name : String) extends OccurPos {
+  val sortKey = "CRE:" + name
 }
 
-sealed abstract class RootElement {
-  def name : String
+final case class OP_AttributeGroup(name : String) extends OccurPos {
+  val sortKey = "AG:" + name
 }
 
-object RootElement {
-  def select1 : PartialFunction[Node,Elem] = {
-    case e : Elem if e.label == "element" => e      
-  }  
-  
-  def select  : PartialFunction[Node,RootElement] = 
-    select1 andThen (RootElementComplex.select orElse RootElementSimple.select)    
-  def apply( e : Elem) : RootElement = select(e)
+final case class OP_Group(name : String) extends OccurPos {
+  val sortKey = "G:" + name
 }
 
-final case class RootElementComplex(
-    name : String,
-    seqOrGroup: Option[ElemSeqOrGroup],
-    attrs : Seq[ElemAttrOrGroup],
-    mixed : Boolean) extends RootElement
-
-object RootElementComplex {
-  def select : PartialFunction[Node,RootElementComplex] = {
-    case e: Elem if e.label == "element" &&
-          (e.child.collect({case x : Elem => x}).headOption.map(_.label) == Some("complexType")) => RootElementComplex(e)
-  }
-  def apply(e : Elem) : RootElementComplex = {
-    ???
-  }
+final case class OP_Indirect(in : OccurPos, through : Seq[OccurPos]) extends OccurPos {
+  override def +(p : OccurPos) = OP_Indirect(p, in +: through)
+  val sortKey = in.sortKey + "_" + through.map(_.sortKey).mkString("","_","")
 }
 
-final case class RootElementSimple(
-    name : String,
-    `type` : String) extends RootElement
-
-object RootElementSimple {
-  def select : PartialFunction[Node,RootElementSimple] = {
-    case e: Elem if e.label == "element" &&
-          (e.child.collect({case x : Elem => x}).isEmpty) => RootElementSimple(e)
-  }
-  def apply(e : Elem) : RootElementSimple = {
-    ???
-  }
+sealed trait Occurrence extends Product {
+  val sortKey : String
 }
-    
-    
+
+final case class O_ElementRef(name : String) extends Occurrence {
+  val sortKey = "E: " + name
+}
+
+final case class O_GroupRef(name : String) extends Occurrence {
+  val sortKey = "G:" + name
+}
+
+final case class O_AttributeRef(name : String) extends Occurrence {
+  if(name == "") { throw new RuntimeException("empty attribute name") }
+  val sortKey = "A:" + name
+}
+
+final case class O_AttributeGroupRef(name : String) extends Occurrence {
+  val sortKey = "AG:" + name
+}
     
 object TestSchema {
-  val schema = XML.loadFile(new File("/home/joao/git/senado/lexml-xml-schemas/src/main/resources/xsd/lexml-flexivel-1.1.xsd"))
-  val rootElms = schema.child.collect { case e : Elem if e.label != "import" => e }
-  
-  def xsd_element(e : Elem) {
-    val subels = e.child.collect({case x : Elem => x })
-    val name = (e \ "@name").text
-    if(subels.length > 2 || subels.headOption.map(_.label).getOrElse("complexType") != "complexType") {
-       println("No complexType under (" + name + ") " + e)
-    } else {
-      subels.foreach(complex_type(name))
-    }
-  }
-  
-  def complex_type(name : String)(e : Elem) {
-    val subels = e.child.collect({case x : Elem => x })
-    val seqs = subels.takeWhile(x => x.label == "sequence" || x.label == "group")
-    val seqs_rest = subels.drop(seqs.size)
-    val seqs_rest_labels = seqs_rest.map(_.label).to[Set]
-    if (!seqs_rest_labels.subsetOf(Set("attribute","attributeGroup"))) {
-       println("Unexpected element under root element (" + name + "): " + seqs_rest_labels + " on: " + e)
-    } else {
-  
-      if(seqs.length > 1) { 
-        println("More than one seq or group in (" + name + "): " + e) 
-      } 
-      seqs.headOption.collect({
-         case x : Elem if e.label == "sequence" => seq_element(name)(x)
-         case x => seq_group(name)(x)
-      })
-      seqs_rest.foreach(elem_attr_element(name))
-   }
-  }
-          
-  def seq_element(name : String)(e : Elem) {
-    val subels = e.child.collect({case x : Elem => x }).to[Seq]
-    if(!subels.forall(x => x.label == "element" || x.label == "group")) {
-      println("Unexpected element inside sequence (" + name + "): " + e)
-    } else {
-      subels.foreach {
-        case x : Elem if x.label == "element" && ((x \ "@ref").text).length == 0 => println("No ref in element(" + name + "): " + x + ", parent: " + e)
-        case x : Elem if x.label == "group" && ((x \ "@ref").text).length == 0 => println("No ref in group(" + name + "): " + x + ", parent: " + e)
-        case _ =>
-      }
-    } 
-  }
-  
-  def elem_attr_element(name : String)(e : Elem) { }
-          
-  def seq_group(name : String)(e : Elem) { }
-
+    
   def main(args : Array[String]) {
-    rootElms.collect {
-      case e : Elem if e.label == "element" => xsd_element(e) 
-      case x : Elem => println("ignoring " + x.label)
+    val schemaXml = XML.loadFile(new File("/home/joao/git/senado/lexml-xml-schemas/src/main/resources/xsd/lexml-flexivel-1.1.xsd"))
+    
+    SchemaXmlValidation.validate(schemaXml)
+    
+    
+    val schema = Schema(schemaXml)
+    
+    schema.validate()
+    
+    val om1  : Seq[(Occurrence,OccurPos)] = schema.rootElements.values.to[Seq].collect {
+        case RootElementComplex(name, elemFields, attrs, _) => 
+          val l1 : Seq[Occurrence] = elemFields collect { 
+            case Ref(refName, RT_Element, _) => O_ElementRef(refName)
+            case Ref(refName, RT_Group, _)  => O_GroupRef(refName)            
+          }
+          val l2 : Seq[Occurrence] = attrs collect {
+            case Attribute(name, _,_) => O_AttributeRef(name) 
+            case AttrGroupRef(name) => O_AttributeGroupRef(name)
+            case AR_Named(name) => O_AttributeRef(name)
+          }
+          (l1 ++ l2).map { x => (x,OP_Complex_Root_Element(name)) }         
+    }.flatten
+    
+    val om2  : Seq[(Occurrence,OccurPos)] = schema.groups.values.to[Seq].flatMap { g =>
+      val l1 : Seq[Occurrence] = g.elems collect {        
+        case Ref(refName, RT_Element, _) => O_ElementRef(refName)
+        case Ref(refName, RT_Group, _)  => O_GroupRef(refName)            
+      }
+      l1.map { x => (x,OP_Group(g.name)) }
+    }
+    
+    val om3 :  Seq[(Occurrence,OccurPos)] = schema.attributeGroups.values.to[Seq].flatMap { g =>
+      val l1 : Seq[Occurrence] = g.fields collect {        
+        case Attribute(name, _,_) => O_AttributeRef(name) 
+        case AttrGroupRef(name) => O_AttributeGroupRef(name)
+        case AR_Named(name) => O_AttributeRef(name)            
+      }
+      l1.map { x => (x,OP_AttributeGroup(g.name)) }
+    } 
+    
+    val ol = om1 ++ om2 ++ om3
+    
+    def mapSet[K,V](ol : Seq[(K,V)]) = {
+      val m0 : Map[K,Set[V]] = Map.empty.withDefaultValue(Set[V]())    
+      ol.foldLeft(m0) { case (m,(oc,op)) =>  m + (oc -> (m.getOrElse(oc,Set()) + op)) }
+    }
+    
+    
+    
+    val m1 = mapSet(ol)
+    
+    
+    val m2 = mapSet(ol.map{case (x,y) => (y,x)})
+        
+    def explode : (Occurrence,Set[OccurPos]) => Seq[(Occurrence,OccurPos)] = {
+      case (O_GroupRef(refName),ops) => 
+        for { 
+          op <- ops.to[Seq] ;
+          oc <-  m2(OP_Group(refName))  
+        } yield (oc,op)
+      case (O_AttributeGroupRef(refName),ops) => 
+        for { 
+          op <- ops.to[Seq] ;
+          oc <-  m2(OP_AttributeGroup(refName))  
+        } yield (oc,op)
+      case (O_ElementRef(refName),ops) => 
+        for { 
+          op <- ops.to[Seq] ;
+          oc <-  m2(OP_Complex_Root_Element(refName)).to[Seq]   
+        } yield (oc,op)
+      case (x,y) => Seq()
+    }
+    
+    def explode1 : ((Boolean,Seq[(Occurrence,OccurPos)]),(Occurrence,Set[OccurPos])) => (Boolean,Seq[(Occurrence,OccurPos)]) = {
+      case ((exploded,sofar),r) =>
+        val d = explode.tupled(r)
+        val d1 = if (d.isEmpty) { r._2.map { y => (r._1,y) } } else { d }
+        (exploded || !d.isEmpty, sofar ++ d1)
+    }
+    
+    def explode2(l : Map[Occurrence,Set[OccurPos]]) : Map[Occurrence,Set[OccurPos]] = {
+      val s0 = (false,Seq[(Occurrence,OccurPos)]())
+      val (exploded,l1) = l.to[Seq].foldLeft(s0)(explode1(_,_))
+      if(exploded) { mapSet(l1) } else { l }
+    }
+    
+    val m1_1 = explode2(m1)
+    
+    val ll1 = m1_1.to[Seq].sortBy{case x : ((Occurrence,Set[OccurPos])) => (1000 - x._2.size,x._1.sortKey)}
+    ll1.foreach { case (k,v) =>      
+      val v1 = v.to[Seq].collect {
+        case x : OP_Complex_Root_Element => x.name
+      }
+      if(v1.size > 1) {
+        println(s"${k}[${v1.size}]: ${v1.sorted.mkString("",", ","")}")
+      }
     }
   }
 }
