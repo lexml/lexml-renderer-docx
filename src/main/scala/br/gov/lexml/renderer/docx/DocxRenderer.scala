@@ -25,8 +25,8 @@ object DocxUtils {
     import scala.collection.JavaConverters._
     
     o match {
-      case (p : P) => p.getContent.asScala.flatMap(extractTextToSeq)
-      case (r : R) => r.getContent.asScala.flatMap(extractTextToSeq) 
+      case (p : P) => ??? // p.getContent.asScala.flatMap(extractTextToSeq _)
+      case (r : R) => ??? // r.getContent.asScala.flatMap(extractTextToSeq _) 
       case (t : Text) => Seq(t.getValue())
       case _ => Seq() 
     }
