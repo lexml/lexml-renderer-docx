@@ -24,6 +24,7 @@ object TestDocxRenderer extends App {
   println(s"files.size = ${files.size}")
   val samples = files.flatMap { f => 
     try { 
+      println("Parsing xml: " + f)
       Some((f,LexmlSchema(f))) 
     } catch { 
       case ex : Exception =>         
@@ -32,7 +33,8 @@ object TestDocxRenderer extends App {
   println(s"samples.size = ${samples.size}")
   val destDir = new File("/tmp/results")
   try { destDir.mkdirs() } catch { case _ : Exception => }
-  samples.take(1) foreach { case (f,doc) =>    
+  samples.take(1) foreach { case (f,doc) =>
+    println("Rendering: " + f)
     val rendered = renderer.render(doc)    
     val dst = new File(destDir,f.getName().replaceAll("\\.xml",".docx"))
     println("Writing to " + dst.getPath)
