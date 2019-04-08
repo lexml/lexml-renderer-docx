@@ -20,158 +20,17 @@ import br.gov.lexml.doc.GenHtmlInlineElement
 import java.net.URI
 
 
-
-final case class ZAEntryData(
-    name : String, comment : Option[String] = None,
-    extra : Option[Array[Byte]] = None)  
-    
-final case class ZAEntry(data : ZAEntryData, content : Option[Array[Byte]] = None) 
-
-final case class ZipArchive(
-    entries : Map[String,Option[Array[Byte]]] = Map()) 
-    
-object DocxBuilder {        
-  private val reference = {
-    println("Preparing reference ...")
-    val is = new ZipInputStream(ClassLoader.getSystemResourceAsStream("reference.docx"))
-    val mb = Seq.newBuilder[(String,Option[Array[Byte]])]
-    var ze = is.getNextEntry
-    while(ze != null) {
-      val name = ze.getName
-      val data = if (ze.isDirectory()) {
-        None
-      } else {
-        println(s"Reading ${ze.getSize} bytes from ${ze.getName}")
-        val r = IOUtils.toByteArray(is)                
-        println(s"   read ${r.length} bytes")
-        Some(r)
-      }
-      is.closeEntry()
-      mb+= (name -> data)
-      ze = is.getNextEntry
-    }
-    is.close()
-    val res = mb.result()
-    println("reference prepared")
-    res
-  }
-  
-  def makePackage(f : Map[String,Elem] => Map[String,Elem]) = {    
-    println("makePackage: called")
-    val zipMap = reference.collect { 
-      case (n,Some(d)) =>
-        println(s"Writing reference entry ${n}")
-        val res = (n,XML.load(new ByteArrayInputStream(d)))
-        println(s"   read: " + res._2)
-        res
-        }.toMap
-    val zipMap1 = f(zipMap)
-    val bos = new ByteArrayOutputStream()
-    val os = new ZipOutputStream(bos)
-    reference.foreach { 
-      case (f,None) =>
-      case (f,Some(d)) =>                       
-        val ze = new ZipEntry(f)        
-        os.putNextEntry(ze)
-        zipMap1.get(f) match {
-          case None => os.write(d)
-          case Some(xml) =>
-            val sw = new StringWriter()
-            XML.write(sw,xml,"utf-8",true,null)
-            sw.close()
-            os.write(sw.toString().getBytes("utf-8"))
-
-        }
-        os.closeEntry()                
-    }
-    os.close()
-    bos.toByteArray()        
-  }
-      
-}
-
-final case class Style(    
-    runStyle : Option[String] = None,
-    bold : Option[Boolean] = None,
-    italics : Option[Boolean] = None,
-    caps : Option[Boolean] = None,
-    smallCaps : Option[Boolean] = None,
-    subscript : Option[Boolean] = None,
-    superscript : Option[Boolean] = None,
-    indent : Option[Double] = None) {  
-  def RunStyle(style : String) = copy(runStyle = Some(style))
-  def NoRunStyle = copy(runStyle = None)
-  def Bold = copy(bold = Some(true))
-  def NoBold = copy(bold = Some(false))
-  def Italics = copy(italics = Some(true))
-  def NoItalics = copy(italics = Some(false))
-  def Caps = copy(caps = Some(true), smallCaps = Some(false))
-  def NoCaps = copy(caps = Some(false))
-  def SmallCaps = copy(smallCaps = Some(true), caps = Some(false))
-  def NoSmallCaps = copy(smallCaps = Some(false))
-  def Sub = copy(subscript = Some(true), superscript = Some(false))
-  def NoSub = copy(subscript = Some(false))
-  def Super = copy(superscript = Some(true), subscript = Some(false))
-  def NoSuper = copy(superscript = Some(false))
-  def Indent(n : Double) = copy(indent = Some(n))  
-  def toRPr = (<w:rRr/>)
-}
-
 class DocxBuilder(config : Config) {
-  private var pars : Seq[Elem] = Seq()
-  private var parStyle : Option[String] = None
-  private var indentLen : Long = 0L
-  private var runs : Option[Seq[Elem]] = None
-  private var runStyle : Style = Style()
-  private var onPar : Boolean = false
-  
-  private var nextId = 99999L
   
   def id() = { val x = nextId ; nextId = nextId + 1 ; x }
   
   def par(styleNameOrNull : String = null)(f : => Any) {
-    if(runs.isDefined || onPar) { 
-      sys.error("Reentrant paragraph!")
-    }
-    onPar = true
-    runs = Some(Seq())
-    runStyle = Style()
-    parStyle = Option(styleNameOrNull)
-    f
-    val par = (
-        <w:p>
-					<w:pPr>
-						{parStyle.map(x => <w:pStyle w:val={x}/>).getOrElse(Null)}
-						{if(indentLen > 0L) {<w:ind w:left={indentLen.toString} w:right="0" w:hanging="0"/>} else { Null }}
-						<w:rPr/>
-					</w:pPr>				
-				  { NodeSeq.fromSeq(runs.getOrElse(Seq())) }
-				</w:p>
-        )
-    println(s"Emitindo paragrafo: (indent=${indentLen}) " + par)
-    pars = pars :+ par
-    runs = None
-    runStyle = Style()
-    parStyle = None
-    onPar = false
   }
   
   def text(txt : String) {
-    if(!onPar) { sys.error("Not on paragraph!") }
-    println("Emitindo texto:  " + txt)
-    val run = (
-        <w:r>
-        {runStyle.toRPr}
-        	<w:t xml:space="preserve">{txt}</w:t>
-        </w:r>)
-    runs = runs.map(_ :+ run)
   }
   
   private def withS(g : Style => Style,f : => Any) {
-    val old = runStyle
-    runStyle = g(runStyle)
-    f
-    runStyle = old
   }
   
   def style(name : String)(f : => Any) = withS(_.RunStyle(name),f)    
@@ -189,36 +48,93 @@ class DocxBuilder(config : Config) {
   def sup(f : => Any) = withS(_.Super,f)
   
   def build() = {
-    DocxBuilder.makePackage { m =>
-      val document = m("word/document.xml")
-      println("document = " + document)
-      val body = (document \ "body").head.asInstanceOf[Elem]
-      val sectPr = (body \ "sectPr").head.asInstanceOf[Elem]
-      val newBody = body.copy(child = pars :+ sectPr)
-      val newDocument = document.copy(child = Seq(newBody))
-      Map("word/document.xml" -> newDocument)
-    }
   }
   
   def hyperlink(href : String,linkStyleOrNull : String = null)(f : => Any) {
-    val oldRuns = runs.getOrElse(Seq())
-    runs = Some(Seq())
-    style(Option(linkStyleOrNull).getOrElse("InternetLink")) {
-      f
-    }
-    val inRuns = runs.get
-    val r = (<w:hyperlink r:id={"rId" + id()}>{NodeSeq.fromSeq(inRuns)}</w:hyperlink>)
-    runs = Some(oldRuns :+ r)
+
   }
   
   def indent(len : Long)(f : => Any) {
-    val oldIndent = indentLen
-    indentLen = indentLen + len
-    println("IN: indent set to " + indentLen)
-    f    
-    indentLen = oldIndent
-    println("OUT: indent set to " + indentLen)
+
   }
+}
+
+object ConfigDispositivo {
+  
+}
+
+class ConfigDispositivo(tipo : String,config : Config) {
+  val template = XML.loadString(config.getString("template"))
+             
+}
+
+class TemplateConfig(config : Config) {
+  val template = XML.loadString(config.getString("template"))
+  val estilo
+}
+
+class DocxRenderingConfig(config : Config) {
+  val indentAlteracao = config.getInt("indentacaoAlteracao")
+  val templates = { 
+    val temps = config.getConfig("templates")
+    templateKeys.map(k => (k,new TemplateConfig(config.getConfig(k)))).toMap    
+  }
+  val templateKeys = Set(
+      "formulaPromulgacao",
+      "epigrafe",
+      "ementa",
+      "preambulo",      
+      "livro",
+      "parte",
+      "capitulo",
+      "secao",
+      "subsecao",
+      "caput",
+      "artigo",
+      "caput",
+      "paragrafo",
+      "inciso",
+      "alinea",
+      "item",
+      "pena",
+      "ateracao",
+      "remissao")
+  
+  
+  val STYLE_NORMAL = config.getString(")
+  val STYLE_FORMULA_PROMULGACAO = "FormulaPromulgacaoP"
+  val STYLE_EPIGRAFE = "EpigrafeP"
+  val STYLE_EMENTA = "EmentaP"
+  val STYLE_PREAMBULO = "PreambuloP"
+  val STYLE_ARTIGO_ROTULO="ArtigoRotuloP"
+  val STYLE_LIVRO_ROTULO = "STYLE_LIVRO_ROTULO"
+  val STYLE_LIVRO_NOME = "STYLE_LIVRO_NOME"
+  val STYLE_PARTE_ROTULO = "STYLE_PARTE_ROTULO"
+  val STYLE_PARTE_NOME = "STYLE_PARTE_NOME"
+  val STYLE_TITULO_ROTULO = "STYLE_TITULO_ROTULO"
+  val STYLE_TITULO_NOME = "STYLE_TITULO_NOME"
+  val STYLE_CAPITULO_ROTULO = "STYLE_CAPITULO_ROTULO"
+  val STYLE_CAPITULO_NOME = "STYLE_CAPITULO_NOME            "
+  val STYLE_SECAO_ROTULO = "STYLE_SECAO_ROTULO"
+  val STYLE_SECAO_NOME = "STYLE_SECAO_NOME"
+  val STYLE_SUBSECAO_ROTULO = "STYLE_SUBSECAO_ROTULO"
+  val STYLE_SUBSECAO_NOME = "STYLE_SUBSECAO_NOME"
+  val STYLE_CAPUT_PAR = "STYLE_CAPUT_PAR"
+  val STYLE_PARAGRAFO_PAR = "STYLE_PARAGRAFO_PAR"
+  val STYLE_INCISO_PAR = "STYLE_INCISO_PAR"
+  val STYLE_ALINEA_PAR = "STYLE_ALINEA_PAR"
+  val STYLE_ITEM_PAR = "STYLE_ITEM_PAR"
+  val STYLE_PENA_PAR = "STYLE_PENA_PAR"
+  val STYLE_PARAGRAFO_ROTULO = "STYLE_PARAGRAFO_ROTULO"
+  val STYLE_INCISO_ROTULO = "STYLE_INCISO_ROTULO"
+  val STYLE_ALINEA_ROTULO = "STYLE_ALINEA_ROTULO"
+  val STYLE_ITEM_ROTULO = "STYLE_ITEM_ROTULO"
+  val STYLE_PENA_ROTULO = "STYLE_PENA_ROTULO"
+  val STYLE_OMISSIS = "STYLE_OMISSIS"
+  val STYLE_REMISSAO_HYPERLINK = "STYLE_REMISSAO_HYPERLINK"
+  val STYLE_ANCHOR_HYPERLINK = "STYLE_ANCHOR_HYPERLINK"
+  val STYLE_SPAN_HYPERLINK = "STYLE_SPAN_HYPERLINK"
+  val INDENT_ALTERACAO = 562L
 }
 
 object DocxRendering {
@@ -256,7 +172,7 @@ object DocxRendering {
   val STYLE_REMISSAO_HYPERLINK = "STYLE_REMISSAO_HYPERLINK"
   val STYLE_ANCHOR_HYPERLINK = "STYLE_ANCHOR_HYPERLINK"
   val STYLE_SPAN_HYPERLINK = "STYLE_SPAN_HYPERLINK"
-  val INDENT_ALTERACAO = 562L
+  val INDENT_ALTERACAO = 562L      
 }
 
 
