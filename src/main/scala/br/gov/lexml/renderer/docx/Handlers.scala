@@ -3,7 +3,7 @@ package br.gov.lexml.renderer.docx
 import br.gov.lexml.doc._
 import scala.xml._
 import com.typesafe.config._
-
+/*
 
 class LexmlHandlerContext {
   def cocument() : LexmlDocument
@@ -23,3 +23,6 @@ class LexmlHandlers(contextHolder : LexmlHandlerContextHolder) {
   
   
 }
+*/
+
+trait REMOVEME2

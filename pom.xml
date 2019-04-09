@@ -252,6 +252,18 @@
 			<artifactId>ficus_${scala.version}</artifactId>
 			<version>1.4.5</version>
 		</dependency>
+
+        <dependency>
+            <groupId>org.typelevel</groupId>
+            <artifactId>cats-core_${scala.version}</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.typelevel</groupId>
+            <artifactId>mouse_${scala.version}</artifactId>
+            <version>0.20</version>
+        </dependency>
 	</dependencies>
 
 

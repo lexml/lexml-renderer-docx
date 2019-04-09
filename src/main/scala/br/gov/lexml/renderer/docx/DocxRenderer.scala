@@ -19,7 +19,9 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import br.gov.lexml.doc.GenHtmlInlineElement
 import java.net.URI
 
+trait REMOVEME
 
+/*
 class DocxBuilder(config : Config) {
   
   def id() = { val x = nextId ; nextId = nextId + 1 ; x }
@@ -69,8 +71,7 @@ class ConfigDispositivo(tipo : String,config : Config) {
 }
 
 class TemplateConfig(config : Config) {
-  val template = XML.loadString(config.getString("template"))
-  val estilo
+  val template = XML.loadString(config.getString("template"))  
 }
 
 class DocxRenderingConfig(config : Config) {
@@ -101,7 +102,7 @@ class DocxRenderingConfig(config : Config) {
       "remissao")
   
   
-  val STYLE_NORMAL = config.getString(")
+  val STYLE_NORMAL = config.getString("")
   val STYLE_FORMULA_PROMULGACAO = "FormulaPromulgacaoP"
   val STYLE_EPIGRAFE = "EpigrafeP"
   val STYLE_EMENTA = "EmentaP"
@@ -498,4 +499,4 @@ class DocxRenderer extends Renderer {
     println("As model object: " + doc)
     new DocxRendering(doc,config).render()       
   }
-}
+}*/

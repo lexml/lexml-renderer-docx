@@ -8,7 +8,7 @@ import scala.xml._
 import net.ceedubs.ficus.readers.ValueReader
 import com.typesafe.config.Config
 
-
+/*
 
 object Elemento extends Enumeration {
   val formulaPromulgacao = Value("formulaPromulgacao")
@@ -54,3 +54,6 @@ object DocxRendererConfig {
   def fromConfig(config : Config) = config.atKey("root").as[DocxRendererConfig]("root")
 }
 
+*/
+
+trait REMOVEME3

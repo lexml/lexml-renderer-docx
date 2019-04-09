@@ -15,6 +15,77 @@ case object PT_FORMULA_PROMULGACAO
       charStyle = Some("charFormulaPromulgacao"))
 
 class DocxRendererOutput {
+
+}
+
+class DocxRenderer {
+  val out = new DocxRendererOutput()
+  
+  def renderLexmlDocument(doc : LexmlDocument) = {
+    renderDocumentContents(doc.contents)
+  }
+  
+  def renderDocumentContents(contents : DocumentContents) =
+    contents match {
+    case n : Norma => renderNorma(n)
+    case pj : ProjetoNorma => renderProjetoNorma(pj)
+    case _ => sys.error("renderDocumentContents: unsupported: " + contents)
+  }
+      
+  def renderProjetoNorma(pj : ProjetoNorma) = {
+    renderAutorProjetoSeq(pj.autorProjeto)
+    renderNorma(pj.norma)
+    renderJustificacaoSeq(pj.justificacao)
+  }
+  
+  def renderAutorProjetoSeq(autorProjetoSeq : Seq[String]) = {
+    autorProjetoSeq.foreach(renderAutorProjeto)
+  }
+  
+  def renderJustificacaoSeq(justificacaoSeq : Seq[Justificacao]) = {
+    justificacaoSeq.foreach(renderJustificacao)
+  }
+  
+  def renderAutorProjeto(autorProjeto : String) = {
+    
+  }
+  
+  def renderJustificacao(justificacao : Justificacao) {
+    
+  }
+  
+  def renderNorma(norma : Norma) = {
+    renderHierarchicalStructure(norma.contents)  
+  }
+  
+  def renderHierarchicalStructure(hs : HierarchicalStructure) = {
+    hs.formulaPromulgacao.foreach(renderFormulaPromulgacao)
+    hs.epigrafe.foreach(renderEpigrafe)
+    hs.ementa.foreach(renderEmenta)
+    hs.preambulo.foreach(renderPreambulo)
+    renderArticulacao(hs.articulacao)
+  }
+  
+  def renderFormulaPromulgacao(fp : FormulaPromulgacao) = {
+    outputParagraph(PT_FORMULA_PROMULGACAO,fp.inlineSeq)
+  }
+  
+  def renderEpigrafe(ep : Epigrafe) = {
+    
+  }
+  
+  def renderEmenta(em : Ementa) = {
+    
+  }
+  
+  def renderPreambulo(pb : Preambulo) = {
+    
+  }    
+  
+  def renderArticulacao(ar : Articulacao) = {
+    
+  }
+ 
   def registerLexmlURN(urn : URI) : Option[String] = {
     None
   }
@@ -75,6 +146,15 @@ class DocxRendererOutput {
         parStyle = parStyle,
         charStyle = charStyle)
     outputXml(renderParagraph(inlineSeq,ctx))
+  }
+  
+  def renderParagraph(parType : ParagraphType,inlineSeq : InlineSeq,ctx : Context) = {            
+    val parStyle = parType.parStyle
+    val charStyle = parType.charStyle
+    val ctx = Context(paragraphType = Some(parType),
+        parStyle = parStyle,
+        charStyle = charStyle)
+    renderParagraph(inlineSeq,ctx)    		
   }
   
   def renderParagraph(inlineSeq : InlineSeq,ctx : Context) = {            
@@ -232,76 +312,6 @@ class DocxRendererOutput {
   
   def renderDfn(ge : GenHtmlInlineElement, ctx : Context) : NodeSeq = {
     renderUnsupported(ge,ctx)
-  }
-  
-}
-
-class DocxRenderer {
-  val out = new DocxRendererOutput()
-  
-  def renderLexmlDocument(doc : LexmlDocument) = {
-    renderDocumentContents(doc.contents)
-  }
-  
-  def renderDocumentContents(contents : DocumentContents) =
-    contents match {
-    case n : Norma => renderNorma(n)
-    case pj : ProjetoNorma => renderProjetoNorma(pj)
-    case _ => sys.error("renderDocumentContents: unsupported: " + contents)
-  }
-      
-  def renderProjetoNorma(pj : ProjetoNorma) = {
-    renderAutorProjetoSeq(pj.autorProjeto)
-    renderNorma(pj.norma)
-    renderJustificacaoSeq(pj.justificacao)
-  }
-  
-  def renderAutorProjetoSeq(autorProjetoSeq : Seq[String]) = {
-    autorProjetoSeq.foreach(renderAutorProjeto)
-  }
-  
-  def renderJustificacaoSeq(justificacaoSeq : Seq[Justificacao]) = {
-    justificacaoSeq.foreach(renderJustificacao)
-  }
-  
-  def renderAutorProjeto(autorProjeto : String) = {
-    
-  }
-  
-  def renderJustificacao(justificacao : Justificacao) {
-    
-  }
-  
-  def renderNorma(norma : Norma) = {
-    renderHierarchicalStructure(norma.contents)  
-  }
-  
-  def renderHierarchicalStructure(hs : HierarchicalStructure) = {
-    hs.formulaPromulgacao.foreach(renderFormulaPromulgacao)
-    hs.epigrafe.foreach(renderEpigrafe)
-    hs.ementa.foreach(renderEmenta)
-    hs.preambulo.foreach(renderPreambulo)
-    renderArticulacao(hs.articulacao)
-  }
-  
-  def renderFormulaPromulgacao(fp : FormulaPromulgacao) = {
-    outputParagraph(PT_FORMULA_PROMULGACAO,fp.inlineSeq)
-  }
-  
-  def renderEpigrafe(ep : Epigrafe) = {
-    
-  }
-  
-  def renderEmenta(em : Ementa) = {
-    
-  }
-  
-  def renderPreambulo(pb : Preambulo) = {
-    
-  }    
-  
-  def renderArticulacao(ar : Articulacao) = {
-    
   }
   
   
