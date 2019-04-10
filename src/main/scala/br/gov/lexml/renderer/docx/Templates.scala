@@ -27,7 +27,7 @@ trait TemplateHandlersBuilder {
   private var _handlers = Seq.newBuilder[TemplateHandler]
   protected class handle(elemLabel : String) {
     def `with`(f : Map[String,String] => Seq[Node]) {
-      _handlers +=  new TemplateHandler {  val label = elemLabel ; override def handle = f }
+     // _handlers +=  new TemplateHandler {  val label = elemLabel ; override def handle = f }
     }
   }
   def handlersWithPrefix(prefix : String) = TemplateHandlers(prefix,_handlers.result() : _*)

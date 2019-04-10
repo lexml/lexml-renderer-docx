@@ -154,7 +154,8 @@ class DocxRenderer {
     val ctx = Context(paragraphType = Some(parType),
         parStyle = parStyle,
         charStyle = charStyle)
-    renderParagraph(inlineSeq,ctx)    		
+  //  renderParagraph(inlineSeq,ctx)
+        ???
   }
   
   def renderParagraph(inlineSeq : InlineSeq,ctx : Context) = {            

@@ -264,6 +264,13 @@
             <artifactId>mouse_${scala.version}</artifactId>
             <version>0.20</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.18</version>
+        </dependency>
+
 	</dependencies>
 
 
