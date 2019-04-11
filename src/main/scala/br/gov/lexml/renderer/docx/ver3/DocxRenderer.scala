@@ -8,8 +8,6 @@ import cats.implicits._
 import cats.data._
 import cats.syntax.all._
 
-
-
 abstract sealed class ParagraphType(    
     val linkedSuffix : String = null,
     val detParStyleId : String = null,
@@ -136,7 +134,8 @@ final case class StyleContext(
       charStyle : Option[String] = None,            
       boldSet : Option[Boolean] = None,
       italicsSet : Option[Boolean] = None,
-      subSup : Option[SubSup] = None) {
+      subSup : Option[SubSup] = None,
+      capsMode : Option[CapsMode] = None) {
   def toPPr(indented : Boolean = false) : NodeSeq = {
     PPr(
         ind = if(indented) { Some(Defaults.indent) } else { None },    
@@ -147,7 +146,7 @@ final case class StyleContext(
     RPr(
     bold = boldSet,
     italics = italicsSet,
-    //capsMode : Option[CapsMode] = None,
+    capsMode = capsMode,
     //color : Option[RGB] = None,
     //lang : Option[String] = None,
     //fonts : Option[Fonts] = None,
@@ -168,7 +167,8 @@ final case class StyleContext(
   def italics = { copy(italicsSet = Some(true)) }
   def sup = { copy(subSup = Some(SS_Sup)) }
   def sub = { copy(subSup = Some(SS_Sub)) }
-  
+  def caps = { copy(capsMode = Some(CM_Caps)) }
+  def centered = { this }
   
   def +(s : StyleContext) =
       StyleContext(paragraphType = s.paragraphType orElse paragraphType,
@@ -176,7 +176,8 @@ final case class StyleContext(
            charStyle = s.charStyle orElse charStyle,
            boldSet = s.boldSet orElse boldSet,
            italicsSet = s.italicsSet orElse italicsSet,
-           subSup = s.subSup orElse subSup
+           subSup = s.subSup orElse subSup,
+           capsMode = s.capsMode orElse capsMode
           )
 }
 
@@ -350,15 +351,20 @@ object DocxBodyRenderer {
       (rrs0.copy(sideData = rrs1.sideData, runs = rrs.runs :+ g(rrs1.runs)),v)
     }
     
-    def run(txt : String) : RunRenderer[Unit] = State { rrs =>
+    def addRun(n : Node) : RunRenderer[Unit] =  State { rrs =>    
+      (rrs.copy(runs = rrs.runs :+ n),())
+    }
+          
+    def run(txt : String) : RunRenderer[Unit] = for {
+      rrs <- getRRS
       val el = (
           <w:r>
 				{rrs.style.toRPr}
-				<w:t>{txt}</w:t>
+				<w:t xml:space="preserve">{txt}</w:t>
 				</w:r>
           )
-      (rrs.copy(runs = rrs.runs :+ el),())
-    }
+      _ <- addRun(el)
+    } yield (())
     
     def withBase[T](uri : URI)(f : RunRenderer[T]) : RunRenderer[T] = State { rrs =>
       f.run(rrs.base(uri)).value
@@ -405,7 +411,10 @@ object DocxBodyRenderer {
       v <- f
       _ <- modifyRRS(_.copy(lang = l))
     } yield (v)
-      
+    
+    def omissisRun = addRun (
+        <w:tab w:val="right" w:pos="8640" w:leader="dot"/>
+        )
     
     def ref[T](uri : URI)(f : String => RunRenderer[T]) : RunRenderer[T] = 
       State { rrs =>
@@ -587,7 +596,7 @@ object DocxBodyRenderer {
       
     
     def render(r : Rotulo, pt : ParagraphType) : RunRenderer[Unit] = 
-      styled(x => x.copy(charStyle = pt.charStyle.orElse(x.charStyle)))(run(r.rotulo))
+      styled(x => x.copy(charStyle = pt.charStyle.orElse(x.charStyle)))(run(r.rotulo) >> run(" "))
      
      
       
@@ -639,16 +648,20 @@ object DocxBodyRenderer {
       
     def render(d : DispositivoPredefNA,skipFirst : Boolean) : ParRenderer[Unit] = {
       val (pt,ptRotulo,ptContent) = parTypesByDispType(d.tipoDispositivo)
-      val (firstInlineSeq,restInlineSeqs) = d.conteudo match {
-        case None => (None,List())
-        case Some(t : TextoDispositivo) => (t.inlineSeqs.map(_.inlineSeq).headOption,t.inlineSeqs.tail.map(_.inlineSeq).to[List])
-        case Some(OmissisSimples) => (Some(InlineSeq(Mixed(Seq(Right("..."))))),List())       
-      } 
       val rStyle = StyleContext(charStyle = ptRotulo.flatMap(_.charStyle))
       val cStyle = StyleContext(charStyle = ptContent.charStyle)
+      val (firstInlineSeq,restInlineSeqs) : (RunRenderer[Unit],Seq[InlineSeq]) = d.conteudo match {
+        case None => (unit[RunRendererState],List())
+        case Some(t : TextoDispositivo) => (
+            t.inlineSeqs.map(_.inlineSeq).headOption.ifDef(x => runStyle(cStyle)(render(x))),
+            t.inlineSeqs.tail.map(_.inlineSeq).to[List])
+        case Some(OmissisSimples) => (
+            omissisRun,
+            List())       
+      }       
       val (head,tail) : (ParRenderer[Unit],Seq[InlineSeq]) = if(!skipFirst) {        
-        val r1 = d.rotulo.ifDef(x => runStyle(rStyle)(run(x.rotulo)))
-        val c1 = firstInlineSeq.ifDef(x => runStyle(cStyle)(render(x)))
+        val r1 = d.rotulo.ifDef(x => runStyle(rStyle)(run(x.rotulo) >> run(" ")))
+        val c1 = firstInlineSeq
         val l1 = optPar(pt)(r1 >> c1)
         (l1,restInlineSeqs)
       } else {

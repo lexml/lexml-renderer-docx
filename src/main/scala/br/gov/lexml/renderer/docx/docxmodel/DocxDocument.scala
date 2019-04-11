@@ -732,7 +732,27 @@ trait XmlComponent {
         NodeSeq.fromSeq(o.map(f))
   }
 }
-  
+
+final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq()) 
+    extends XmlComponent {
+  override def asXML : Elem = (
+<w:document xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" mc:Ignorable="w14 wp14">
+	<w:body>
+		{NodeSeq.fromSeq(contents.map(_.asXML))}
+		<w:sectPr>
+      <w:type w:val="nextPage"/>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:left="1701" w:right="1701" w:header="0" w:top="1417" w:footer="0" w:bottom="1417" w:gutter="0"/>
+      <w:pgNumType w:fmt="decimal"/>
+      <w:formProt w:val="false"/>
+      <w:textDirection w:val="lrTb"/>
+      <w:docGrid w:type="default" w:linePitch="360" w:charSpace="4096"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
+   )  
+}
+
 sealed trait DocxTextComponent extends Product with XmlComponent 
 
 final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) extends DocxTextComponent {
@@ -915,7 +935,7 @@ final case class Hyperlink(run : R, anchor : Option[String] = None, id : Option[
 
 
 
-case object NoBreakHypher extends RunContent {
+case object NoBreakHyphen extends RunContent {
   val asXML = <w:noBreakHyphen/>
 }
 
@@ -927,9 +947,7 @@ case class T(text : String, preserveSpace : Boolean = false) extends RunContent 
   lazy val asXML = <w:t xml:space={if(preserveSpace) { "true" } else {  null }}>{text}</w:t>
 }
 
-case object Tab extends RunContent {
-  val asXML = <w:tab/>
-}
+
 
 abstract sealed class PTabAlignment(val value : String) extends Product
 
@@ -960,7 +978,7 @@ Target="math1.xml" />
 </Relationships>
  * 
  */
-final case class ContentPar(id : String) extends RunContent {
+final case class ContentPart(id : String) extends RunContent {
   val asXML = <w:contentPart r:id={id}/>
 }
 
@@ -1021,7 +1039,7 @@ final case class Tab(
     pos : Int,
     tabType : TabStopType,
     leader : TabLeader = TL_None
-    ) extends Product with XmlComponent {
+    ) extends RunContent {
   lazy val asXML = (
 <w:tab w:leader={leader.value} w:pos={pos.toString} w:val={tabType.value}/>
       )
@@ -1040,7 +1058,7 @@ final case class PPr(
 	{ind.elem(_.asXML)}
 	{jc.elem(x => <w:jc w:val={x.v}/>)}
 	{style.elem(x => <w:pStyle w:val={x}/>)}
-	{cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}
+	{cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}	
 </w:pPr>
 	)
 }

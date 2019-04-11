@@ -10,38 +10,48 @@ import org.apache.commons.compress.archivers.zip._
 import scala.xml.XML
 import br.gov.lexml.renderer.docx.ver3.ParagraphType
 import java.io.File
+import sun.misc.Launcher.AppClassLoader
+import java.util.zip.ZipInputStream
+import org.apache.commons.io.IOUtils
 
-object TestBodyRenderer extends App {
+object TestBodyRenderer extends App {  
+  
   ParagraphType.types.foreach(println)
   import java.io.File
   import scala.collection.JavaConverters._
   
   
   val referenceDocx = FileUtils.readFileToByteArray(new File("src/main/resources/docx/reference.docx"))
-
-  val referenceDocxZip = {
-    val channel = new SeekableInMemoryByteChannel(referenceDocx)
-    new ZipFile(channel)
+  val referenceEntries = {
+    import java.io._
+    import java.util.zip._
+    val zis = new ZipInputStream(new ByteArrayInputStream(referenceDocx))
+    val b = Map.newBuilder[String,Array[Byte]]
+    var ze : ZipEntry = zis.getNextEntry()
+    while(ze != null) {
+      val data = IOUtils.toByteArray(zis)
+      b += (ze.getName -> data)
+      zis.closeEntry()
+      ze = zis.getNextEntry()
+    }
+    zis.close()
+    b.result()
   }
-  
+     
   def writeReplace(f : File, data : (String,Array[Byte])*) {
     val m : Map[String,Array[Byte]] = data.toMap
-    import java.io._                   
-    val zos = new ZipArchiveOutputStream(new FileOutputStream(f))        
-    referenceDocxZip.copyRawEntries(zos, new  ZipArchiveEntryPredicate {    
-      def test(ze : ZipArchiveEntry) : Boolean = {
-        println(s"Testing ${ze.getName}, given = ${m.keySet}")      
-        !m.contains(ze.getName)
-      }
-    })
-    m.foreach { case (name,data) =>
-      zos.putArchiveEntry(new ZipArchiveEntry(name))
+    import java.io._
+    import java.util.zip._    
+    val zos = new ZipOutputStream(new FileOutputStream(f))
+    val m1 = referenceEntries ++ m
+    m1.foreach { case (name,data) =>
+      val ze = new ZipEntry(name)
+      ze.setSize(data.length)
+      zos.putNextEntry(ze)
       zos.write(data)
-      zos.closeArchiveEntry()
+      zos.closeEntry()
     }
-    try {
-      zos.close()      
-    } catch { case _ : Exception => }    
+    zos.close()        
   }
   
   val sampleDir = new File("../lexml-schema-scala/src/test/samples")
