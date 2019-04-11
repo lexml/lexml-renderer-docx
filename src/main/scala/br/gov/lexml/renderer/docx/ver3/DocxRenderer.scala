@@ -14,14 +14,11 @@ abstract sealed class ParagraphType(
     val linkedSuffix : String = null,
     val detParStyleId : String = null,
     val detCharStyleId : String = null) extends Product {
-  println(s"Creating ${linkedSuffix} ${detParStyleId} ${detCharStyleId}")
   lazy val (parStyle,charStyle,styleElems) = Option(linkedSuffix) match {
     case Some(idSuffix) =>
-      println(s"idSuffix = ${idSuffix}")
       val ((idp,p),(idc,c)) = DocxMainPartRenderer.basicLinkedStyles(idSuffix, idSuffix, None,None,None,None,Some(-1))
       (Some(idp),Some(idc),Seq(p,c))
     case None =>
-      println(s"no idSuffix")
       val idp = Option(detParStyleId)
       val idc = Option(detCharStyleId)
       val par = idp.map(x => DocxMainPartRenderer.basicParStyle(x, x))
@@ -69,8 +66,6 @@ object ParagraphType {
       PT_PENA_CONTENT,
       PT_ALTERACAO
       )
-   println(s"types = ${types}")
-   println(s"types.flatMap = ${types.flatMap(_.styleElems)}")
    val customStyles = 
      types.to[IndexedSeq].flatMap{ x =>
        println("x = " + x)
@@ -188,10 +183,14 @@ final case class StyleContext(
 final case class ParRendererState(    
     pars : Seq[Elem] = Seq(),
     sideData : SideData = SideData(),
-    indented : Boolean = false) {
+    indented : Boolean = false,
+    abreAspas : Boolean = false,
+    fechaAspas : Boolean = false) {
     def base(base : URI) : ParRendererState = {      
       copy(sideData = sideData.base(base))
     }
+    def setAbreAspas = copy(abreAspas = true)
+    def setFechaAspas = copy(fechaAspas = true)
     def resolveUri(uri : URI) = {
       sideData.resolveUri(uri)
     }    
@@ -305,22 +304,31 @@ object DocxBodyRenderer {
     def runStyle[T](s : StyleContext)(g : RunRenderer[T]) : RunRenderer[T] =
       styled(_ + s)(g)
       
-    def parStyle[T](style : StyleContext = StyleContext())(g : RunRenderer[T]) : ParRenderer[T] = State { prs =>    
+    def parStyle[T](style : StyleContext = StyleContext())(g : RunRenderer[T]) : ParRenderer[T] = State { prs =>
+      val g1 : RunRenderer[T] = for {
+         _ <- if (prs.abreAspas) { run ("“") } else { unit[RunRendererState] }
+         v <- g
+         _ <- if (prs.fechaAspas) { run ("”") } else { unit[RunRendererState] }
+      } yield (v)
       val rrs0 = RunRendererState(
               style = style,
               sideData = prs.sideData)          
-      val (rrs,res) = g.run(rrs0).value
+      val (rrs,res) = g1.run(rrs0).value
       val p = (<w:p>
-				{ style.toPPr(prs.indented) }
+				{ style.toPPr(prs.indented) }				
 				{ rrs.runs }
 				</w:p>)
-  	  (prs.copy(sideData = rrs.sideData, pars = prs.pars :+ p),res)		
+  	  (prs.copy(sideData = rrs.sideData, pars = prs.pars :+ p, abreAspas = false, fechaAspas = false),res)		
     }
+    
+    def abreAspas = modifyPRS(_.setAbreAspas)
+    def fechaAspas = modifyPRS(_.setFechaAspas)
+    def clearAspas = modifyPRS(_.copy(abreAspas = false, fechaAspas = false))
     
     def wrapped[T](f : RunRenderer[T])(g : NodeSeq => Node) : RunRenderer[T] = State { rrs =>
       val rrs0 = rrs.copy(runs = Seq())
       val (rrs1,v) = f.run(rrs0).value
-      (rrs0.copy(sideData = rrs1.sideData, runs = rrs0.runs :+ g(rrs1.runs)),v)
+      (rrs0.copy(sideData = rrs1.sideData, runs = rrs.runs :+ g(rrs1.runs)),v)
     }
     
     def run(txt : String) : RunRenderer[Unit] = State { rrs =>
@@ -670,16 +678,25 @@ object DocxBodyRenderer {
       (prs1.copy(indented = p0),res) 
     }
     
-    def render(a : AlteracaoElement) : ParRenderer[Unit] = a match {
-      case x : BlockElement => render(x)
-      case x : Container => render(x)
-      case x : FormulaPromulgacao => render(x)
-      case x : Epigrafe => render(x)
-      case x : Ementa => render(x)
-      case x : Preambulo => render(x)
-      case x : HierarchicalElement => render(x)
-      case x : LXContainer => render(x)
-      case _ => sys.error("render(AlteracaoElement): elemento não suportado: " + a)
+    def render(a : AlteracaoElement) : ParRenderer[Unit] = {            
+      val inside = a match {      
+        case x : BlockElement => render(x)
+        case x : Container => render(x)
+        case x : FormulaPromulgacao => render(x)
+        case x : Epigrafe => render(x)
+        case x : Ementa => render(x)
+        case x : Preambulo => render(x)
+        case x : HierarchicalElement => render(x)
+        case x : LXContainer => render(x,false)
+        case _ => sys.error("render(AlteracaoElement): elemento não suportado: " + a)
+      }
+      println(s"AlteracaoElement: abreAspas: ${a.abreAspas}, fechaAspas: ${a.fechaAspas}, element: ${a}")
+      for {
+        _ <- if(a.abreAspas) { abreAspas } else { unit[ParRendererState]  }
+        _ <- if(a.fechaAspas) { fechaAspas } else { unit[ParRendererState]  }
+        _ <- inside
+        _ <- clearAspas
+      } yield (())      
     }
     
     def render(b : BlockElement) : ParRenderer[Unit] = b match {    

@@ -17,7 +17,7 @@ object TestBodyRenderer extends App {
   import scala.collection.JavaConverters._
   
   
-  val referenceDocx = FileUtils.readFileToByteArray(new File("/home/joao/workspace_oxygen2/renderer-docx/src/main/resources/docx/reference.docx"))
+  val referenceDocx = FileUtils.readFileToByteArray(new File("src/main/resources/docx/reference.docx"))
 
   val referenceDocxZip = {
     val channel = new SeekableInMemoryByteChannel(referenceDocx)
@@ -44,14 +44,14 @@ object TestBodyRenderer extends App {
     } catch { case _ : Exception => }    
   }
   
-  val sampleDir = new File("/home/joao/workspace_oxygen2/lexml-schema-scala/src/test/samples")
+  val sampleDir = new File("../lexml-schema-scala/src/test/samples")
   println(s"${sampleDir.isDirectory()}, ${sampleDir.exists()}")
   
   val files1 = Option(sampleDir.listFiles()).getOrElse(Array()).filterNot(_ == null)  
   def file_filter(f : File) = 
       f != null && f.getName().endsWith(".xml")
       
-  val limit = 5
+  val limit = 50
   val files = files1.filter(file_filter).to[Seq].take(limit)
   
       
@@ -77,16 +77,26 @@ object TestBodyRenderer extends App {
     w.close()
     w.toString().getBytes("utf-8")
   }
-  
+  var count : Int = 1
   samples.foreach({ 
     case (f,doc) =>
-      println("Rendering: " + f)
-      val (mainDoc,styles) = DocxMainPartRenderer.render(doc)    
-      val dst = new File(destDir,f.getName().replaceAll("\\.xml",".docx"))    
-      println("Writing to " + dst.getPath)
-      writeReplace(dst,"word/document.xml" -> xmlToByteArray(mainDoc), "word/styles.xml" -> xmlToByteArray(styles) )
-      val dst2 = new File(destDir,f.getName())
-      FileUtils.copyFile(f, dst2)
+      val fname = s"result${count}"      
+      println(s"(${count}): Rendering: " + f + " to " + fname)
+      count = count + 1
+      val dst2 = new File(destDir,fname + ".xml")
+      FileUtils.copyFile(f, dst2) 
+      try {
+        
+        val (mainDoc,styles) = DocxMainPartRenderer.render(doc)    
+        val dst = new File(destDir,fname+".docx")    
+        println("Writing to " + dst.getPath)
+        writeReplace(dst,"word/document.xml" -> xmlToByteArray(mainDoc), "word/styles.xml" -> xmlToByteArray(styles) )
+
+      } catch {
+        case ex : Exception => 
+          println("Ooops:")
+          ex.printStackTrace()
+      }
     })
 }    
         
