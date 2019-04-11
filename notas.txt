@@ -1,0 +1,8 @@
+Epigrafe - centralizada e caps
+Ementa - Alinhamento à direita e italico
+Agrupadores (com exc. de artigo): 
+	- Rotulos em negrito, caps e centralizado
+	- Titulo: caps e centralizado
+Artigos:
+	"Art." em negrito
+Atenção:  levar em conta o atributo de nota de alteracao (NR)		

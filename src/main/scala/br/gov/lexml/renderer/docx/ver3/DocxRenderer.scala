@@ -307,8 +307,7 @@ object DocxBodyRenderer {
     def parStyle[T](style : StyleContext = StyleContext())(g : RunRenderer[T]) : ParRenderer[T] = State { prs =>
       val g1 : RunRenderer[T] = for {
          _ <- if (prs.abreAspas) { run ("“") } else { unit[RunRendererState] }
-         v <- g
-         _ <- if (prs.fechaAspas) { run ("”") } else { unit[RunRendererState] }
+         v <- g         
       } yield (v)
       val rrs0 = RunRendererState(
               style = style,
@@ -324,6 +323,26 @@ object DocxBodyRenderer {
     def abreAspas = modifyPRS(_.setAbreAspas)
     def fechaAspas = modifyPRS(_.setFechaAspas)
     def clearAspas = modifyPRS(_.copy(abreAspas = false, fechaAspas = false))
+    
+    val abreAspasRun = (
+        <w:r><w:rPr/><w:t>”</w:t></w:r>
+        )
+    
+    val fechaAspasRun = (
+        <w:r><w:rPr/><w:t>”</w:t></w:r>
+        )
+    
+    
+    def addFechaAspas : ParRenderer[Unit] = {      
+      def add(e : Elem) = {
+        e.copy(child = e.child :+ fechaAspasRun)                 
+      }
+      State { (prs : ParRendererState) => prs.pars.lastOption match {
+        case Some(x : Elem) => (prs.copy(pars = prs.pars.init :+ add(x)),())
+        case _ => (prs,())          
+        }                             
+      }
+    }
     
     def wrapped[T](f : RunRenderer[T])(g : NodeSeq => Node) : RunRenderer[T] = State { rrs =>
       val rrs0 = rrs.copy(runs = Seq())
@@ -638,7 +657,7 @@ object DocxBodyRenderer {
       def rendPar(p : InlineSeq) : ParRenderer[Unit] = optPar(pt)(runStyle(cStyle)(render(p)))
       val tail1 : ParRenderer[Unit] = mapM_(tail)(rendPar)
       val firstPart : ParRenderer[Unit] = 
-        head >> mapM_(tail)(rendPar) >> unit    
+        head >> mapM_(tail)(rendPar) >> (if (d.fechaAspas) { addFechaAspas } else { unit })    
        
       for {      
         _ <- firstPart
@@ -692,9 +711,9 @@ object DocxBodyRenderer {
       }
       println(s"AlteracaoElement: abreAspas: ${a.abreAspas}, fechaAspas: ${a.fechaAspas}, element: ${a}")
       for {
-        _ <- if(a.abreAspas) { abreAspas } else { unit[ParRendererState]  }
-        _ <- if(a.fechaAspas) { fechaAspas } else { unit[ParRendererState]  }
+        _ <- if(a.abreAspas) { abreAspas } else { unit[ParRendererState]  }        
         _ <- inside
+        _ <- if(a.fechaAspas) { addFechaAspas } else { unit[ParRendererState]  }        
         _ <- clearAspas
       } yield (())      
     }
