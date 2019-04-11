@@ -1,0 +1,20 @@
+#!/bin/bash
+
+prettify() {
+#	xmllint --nsclean --noent --pretty 1 "$1" > "$1.tmp"
+	tidy -m -i -xml -utf8 -raw  "$1"
+#	mv "$1.tmp" "$1"
+}
+
+for f in *.docx ; do
+  BN=`basename "$f" .docx`
+  mkdir "$BN"
+  cd "$BN"
+  cp "../$BN.xml" .
+  unzip -o ../$f
+  FS=`find . -name \*.xml -print`
+  for g in $FS ; do
+	  prettify $g
+  done
+  cd ..
+done
