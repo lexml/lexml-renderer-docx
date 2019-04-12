@@ -753,7 +753,9 @@ final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq())
    )  
 }
 
-sealed trait DocxTextComponent extends Product with XmlComponent 
+sealed trait DocxTextComponent extends Product with XmlComponent {
+  def isEmpty : Boolean
+}
 
 final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) extends DocxTextComponent {
   lazy val asXML = (
@@ -762,9 +764,16 @@ final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) exte
 	{runs.eachElem(_.asXML)}
 </w:p>
   )      
+  def insertFirst(els : ParElement*) =
+    copy(runs = els ++ runs)
+  def insertLast(els : ParElement*) =
+    copy(runs = runs ++ els)
+  def isEmpty = runs.forall(_.isEmpty)
 }
 
-sealed trait ParElement extends Product with XmlComponent 
+sealed trait ParElement extends Product with XmlComponent {
+  def isEmpty : Boolean = false
+}
 
 abstract sealed class CapsMode extends Product {
   def asXML : NodeSeq 
@@ -870,6 +879,20 @@ final case class RPr(
 {underline.elem(_.asXML)}
 </w:rPr>      
       )
+  def +(x : RPr) = RPr(
+      bold = x.bold orElse bold,
+      italics = x.italics orElse italics,
+      capsMode = x.capsMode orElse capsMode,
+      color = x.color orElse color,
+      lang = x.lang orElse lang,
+      fonts = x.fonts orElse fonts,  
+      rStyle = x.rStyle orElse rStyle,
+      strike = x.strike orElse strike,
+      sz = x.sz orElse sz,
+      szCs = x.szCs orElse szCs,
+      underline = x.underline orElse underline,
+      vertAlign = x.vertAlign orElse vertAlign)
+    
 }
 
 final case class R(
@@ -877,11 +900,17 @@ final case class R(
     contents : Seq[RunContent] = Seq()) extends ParElement {
   lazy val asXML = (
 <w:r>
+{contents.map(_.asXML)}
 </w:r>      
       )
+  def insertFirst(els : RunContent*) = copy(contents = els ++ contents)
+  def insertLast(els : RunContent*) = copy(contents = contents ++ els)
+  override def isEmpty = contents.forall(_.isEmpty)
 }
 
-abstract sealed class RunContent extends Product with XmlComponent
+abstract sealed class RunContent extends Product with XmlComponent {
+  def isEmpty : Boolean = false
+}
 
 case object Br extends RunContent {
   val asXML = <w:br/>
@@ -889,24 +918,24 @@ case object Br extends RunContent {
 
 final case class DelText(text : String, preserveSpace : Boolean = false) extends RunContent {
   lazy val asXML = (
-      <w:delText xml:space={if(preserveSpace) { "true" } else {  null }}>{text}</w:delText>
+      <w:delText xml:space={if(preserveSpace) { "preserve" } else {  null }}>{text}</w:delText>
       )
 }
 
-final case class Del(id : String, run : R, author : Option[String] = None, date : Option[java.time.ZonedDateTime] = None
+final case class Del(id : String, content : Seq[ParElement] = Seq(), author : Option[String] = None, date : Option[java.time.ZonedDateTime] = None
     ) extends RunContent {
   lazy val asXML = (
       <w:del w:id={id} w:author={author.getOrElse(null)} date={date.map(_.toString).getOrElse(null)}>
-		{run.asXML}
+		{NodeSeq.fromSeq(content.map(_.asXML))}
 		</w:del>
       )
 }
 
-final case class Ins(id : String, run : R, author : Option[String] = None, date : Option[java.time.ZonedDateTime] = None
+final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Option[String] = None, date : Option[java.time.ZonedDateTime] = None
     ) extends RunContent {
   lazy val asXML = (
       <w:ins w:id={id} w:author={author.getOrElse(null)} date={date.map(_.toString).getOrElse(null)}>
-		{run.asXML}
+		{NodeSeq.fromSeq(content.map(_.asXML))}
 		</w:ins>
       )
 }
@@ -924,10 +953,10 @@ final case class Ins(id : String, run : R, author : Option[String] = None, date 
 
  */
 
-final case class Hyperlink(run : R, anchor : Option[String] = None, id : Option[String] = None, tooltip : Option[String] = None) extends RunContent {
+final case class Hyperlink(content : Seq[ParElement] = Seq(), anchor : Option[String] = None, id : Option[String] = None, tooltip : Option[String] = None) extends RunContent {
   lazy val asXML = (
    <w:hyperlink r:id={id.getOrElse(null)} w:anchor={anchor.getOrElse(null)} w:tooltip={tooltip.getOrElse(null)}>
-	 {run.asXML}
+	 {NodeSeq.fromSeq(content.map(_.asXML))}
 	</w:hyperlink>
       )
 }
@@ -944,7 +973,8 @@ case class Sym(font : String, char : String) extends RunContent {
 }
 
 case class T(text : String, preserveSpace : Boolean = false) extends RunContent {
-  lazy val asXML = <w:t xml:space={if(preserveSpace) { "true" } else {  null }}>{text}</w:t>
+  lazy val asXML = <w:t xml:space={if(preserveSpace) { "preserve" } else {  null }}>{text}</w:t>
+  override val isEmpty = text.trim.size == 0
 }
 
 

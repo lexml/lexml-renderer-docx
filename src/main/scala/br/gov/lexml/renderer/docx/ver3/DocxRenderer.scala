@@ -66,7 +66,7 @@ object ParagraphType {
       )
    val customStyles = 
      types.to[IndexedSeq].flatMap{ x =>
-       println("x = " + x)
+       
        x.styleElems } 
   
        
@@ -493,7 +493,6 @@ object DocxBodyRenderer {
     def render(e : LXInlineElement) : RunRenderer[Unit] = e match {
       case x : Remissao => render(x)
       case x : RemissaoMultipla => render(x)
-      case x : Alteracao => render(x)
       case x => sys.error(s"render(LXInlineElement): não suportado: ${x}")
     }
     
@@ -722,7 +721,7 @@ object DocxBodyRenderer {
         case x : LXContainer => render(x,false)
         case _ => sys.error("render(AlteracaoElement): elemento não suportado: " + a)
       }
-      println(s"AlteracaoElement: abreAspas: ${a.abreAspas}, fechaAspas: ${a.fechaAspas}, element: ${a}")
+      
       for {
         _ <- if(a.abreAspas) { abreAspas } else { unit[ParRendererState]  }        
         _ <- inside
@@ -1021,7 +1020,8 @@ object DocxMainPartRenderer {
      charId -> basicCharStyle("char" + nameSuffix, charId,basedOnChar,rPr,Some(parId),uiPriority))
   }            
   
-  
+  val stylesElem = 
+	    fixedStyles.copy(child = fixedStyles.child ++ ParagraphType.customStyles)
             
   def render(doc : LexmlDocument) = {
     val bodyRes = DocxBodyRenderer.renderLexmlDocument(doc)
@@ -1041,8 +1041,7 @@ object DocxMainPartRenderer {
     		</w:sectPr>
   		</w:body>
 	  	</w:document>)
-	  val stylesElem = 
-	    fixedStyles.copy(child = fixedStyles.child ++ ParagraphType.customStyles)
+	 
 	      
 	  (mainDocElem,stylesElem)	  	
   }

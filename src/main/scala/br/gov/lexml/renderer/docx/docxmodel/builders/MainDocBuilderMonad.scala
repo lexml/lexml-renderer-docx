@@ -38,6 +38,12 @@ trait MainDocBuilderOps[T] {
   final def modifyMDState(f : T => T) : MB[Unit] = 
     State.modify(x => x.copy(value = f(x.value)))
     
+  final def modifyMDStateV[E](f : T => (T,E)) : MB[E] = 
+    State { x =>
+      val (v,r) = f(x.value)
+      (x.copy(value = v),r)  
+    }
+    
   final def inspectMDState[A](f : T => A) : MB[A] =
       State.inspect(x => f(x.value))
     
@@ -52,6 +58,11 @@ trait MainDocBuilderOps[T] {
     } yield (())
   }
   
+  final def setDocxTextComponents(elems : Seq[DocxTextComponent]) : MB[Unit] =
+    State.modify(_.copy(contents = elems)) 
+  
+  final def docxTextComponents : MB[Seq[DocxTextComponent]] =
+    State.inspect(_.contents) 
   
 }
   

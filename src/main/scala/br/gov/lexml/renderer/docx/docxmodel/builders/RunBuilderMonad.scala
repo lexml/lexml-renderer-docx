@@ -27,33 +27,44 @@ trait RunBuilderOps[T] {
       (st.modify(x => mo.merge(x,st2.value)),(R(rPr = rPr,contents = runElems),v))        
   }
   
-  final def putRC(rc : RunContent*) : RB[Unit] = 
-    State.modify((x : RST) => x.copy(contents = x.contents ++ rc)) 
+  final def putRC(rc : RunContent*) : RB[Unit] = {
+    State.modify((x : RST) => x.copy(contents = x.contents ++ rc))
+  }
   
   final def br = putRC(Br)
   
   final def delText(text : String, preserveSpace : Boolean = false) =
     putRC(DelText(text, preserveSpace))
   
-  final def enclosingRun(rb : RB[Unit],rPr : Option[RPr] = None)(f : R => RunContent)(implicit mo : Mergeable[T]) =
+  final def enclosingRun2(rb : RB[Unit],rPr : Option[RPr] = None)(f : R => RunContent)(implicit mo : Mergeable[T]) =
     subRun(rPr)(rb).flatMap { case (run,_) => putRC(f(run)) }
-    
-  final def del(id : String, author : Option[String] = None, 
-      date : Option[java.time.ZonedDateTime] = None,
-      rPr : Option[RPr] = None)(rb : RB[Unit])(implicit mo : Mergeable[T]) =
-      enclosingRun(rb,rPr)(Del(id,_,author,date))
+  
+  final def enclosingRun[T1](
+      pb : ParBuilderMonad[T1,Unit])(f : Seq[ParElement] => RunContent)(implicit mo : Mergeable2[T,T1]) = 
+    State { st0 : RST =>
+      val pst0 = ParBuilderState[T1](value = mo.extract(st0.value))
+      val (pst1,_) = pb.run(pst0).value
+      val rc = f(pst1.contents)
+      val st1 = st0.copy(contents = st0.contents :+ rc, value = mo.merge(st0.value,pst1.value))
+      (st1,())    
+  }
+  
+  final def del[T1](id : String, author : Option[String] = None, 
+      date : Option[java.time.ZonedDateTime] = None)
+      (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
+      enclosingRun(pb)(Del(id,_,author,date))
       
       
-  final def ins(id : String, author : Option[String] = None, 
-      date : Option[java.time.ZonedDateTime] = None,
-      rPr : Option[RPr] = None)(rb : RB[Unit])(implicit mo : Mergeable[T]) =
-      enclosingRun(rb,rPr)(Ins(id,_,author,date))
+  final def ins[T1](id : String, author : Option[String] = None, 
+      date : Option[java.time.ZonedDateTime] = None)
+      (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
+      enclosingRun(pb)(Ins(id,_,author,date))
 
-  final def hyperlink(anchor : Option[String] = None, 
+  final def hyperlink[T1](anchor : Option[String] = None, 
         id : Option[String] = None, 
-        tooltip : Option[String] = None,
-      rPr : Option[RPr] = None)(rb : RB[Unit])(implicit mo : Mergeable[T])  : RB[Unit] =
-      enclosingRun(rb,rPr)(Hyperlink(_,anchor, id, tooltip))
+        tooltip : Option[String] = None)
+        (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
+      enclosingRun(pb)(Hyperlink(_,anchor, id, tooltip))
   
   final def noBreakHyphen = putRC(NoBreakHyphen)
   

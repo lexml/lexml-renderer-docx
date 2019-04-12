@@ -25,4 +25,8 @@ type MainDocBuilderMonadStmt[T] = MainDocBuilderMonad[T,Unit]
         } yield (())            
       }
     }
+
+type Mergeable[T] = Mergeable2[T,T]
 }
+
+

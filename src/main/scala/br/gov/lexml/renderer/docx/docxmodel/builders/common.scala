@@ -12,7 +12,6 @@ trait Mergeable2[T,Q] {
   def merge(x : T, y : Q) : T
 }
 
-trait Mergeable[T] extends Mergeable2[T,T] {  
-  override final def extract(x : T) = x
-}
+
+
   
