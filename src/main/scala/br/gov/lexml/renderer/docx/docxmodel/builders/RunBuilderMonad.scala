@@ -27,7 +27,7 @@ trait RunBuilderOps[T] {
       (st.modify(x => mo.merge(x,st2.value)),(R(rPr = rPr,contents = runElems),v))        
   }
   
-  final def putRC(rc : RunContent*) = 
+  final def putRC(rc : RunContent*) : RB[Unit] = 
     State.modify((x : RST) => x.copy(contents = x.contents ++ rc)) 
   
   final def br = putRC(Br)
@@ -52,7 +52,7 @@ trait RunBuilderOps[T] {
   final def hyperlink(anchor : Option[String] = None, 
         id : Option[String] = None, 
         tooltip : Option[String] = None,
-      rPr : Option[RPr] = None)(rb : RB[Unit])(implicit mo : Mergeable[T])  =
+      rPr : Option[RPr] = None)(rb : RB[Unit])(implicit mo : Mergeable[T])  : RB[Unit] =
       enclosingRun(rb,rPr)(Hyperlink(_,anchor, id, tooltip))
   
   final def noBreakHyphen = putRC(NoBreakHyphen)

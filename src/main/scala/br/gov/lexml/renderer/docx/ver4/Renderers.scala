@@ -90,7 +90,7 @@ trait Renderers extends RunBuilderOps[RunRendererState] with ParBuilderOps[ParRe
   def remissaoMultipla(r : RemissaoMultipla) : RunRenderer[Unit] = 
     for {
       oldBase <- inspectPState(_.getBase)
-      val newBase = oldBase.map(_.resolve(r.base.uri)).orElse(Some(r.base.uri))
+      newBase = oldBase.map(_.resolve(r.base.uri)).orElse(Some(r.base.uri))
       _ <- modifyPState(_.setBase(newBase))
       _ <- inlineSeq(r.inlineSeq)
       _ <- modifyPState(_.setBase(oldBase))      
@@ -98,7 +98,7 @@ trait Renderers extends RunBuilderOps[RunRendererState] with ParBuilderOps[ParRe
     
   def remissao(r : Remissao) : RunRenderer[Unit] = for {
       base <- inspectPState(_.getBase) 
-      val href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
+      href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
       hd <- modifyPStateV(_.addRef(href))
       _ <- hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip,rPr=hd.rPr)(inlineSeq(r.inlineSeq))
     } yield (())
