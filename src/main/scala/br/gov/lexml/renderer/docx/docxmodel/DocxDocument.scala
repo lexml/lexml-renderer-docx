@@ -717,21 +717,6 @@ object DocxFile {
   }                                
 }
 
-trait XmlComponent {
-  def asXML : Elem
-  implicit class RichOption[T](o : Option[T]) {
-    def elem(f : T => Elem) : NodeSeq = {
-      o.map(f).getOrElse(NodeSeq.Empty)
-    }
-  }  
-  def cond(c : Boolean)(e : => NodeSeq) : NodeSeq = {
-    if(c) { e } else { NodeSeq.Empty }    
-  }
-  implicit class RichSeq[T](o : Seq[T]) {
-    def eachElem(f : T => Elem) : NodeSeq =
-        NodeSeq.fromSeq(o.map(f))
-  }
-}
 
 final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq()) 
     extends XmlComponent {
@@ -851,7 +836,9 @@ case object VA_Baseline extends VertAlignment("baseline")
 
 final case class RPr(
     bold : Option[Boolean] = None,
+    boldCs : Option[Boolean] = None,
     italics : Option[Boolean] = None,
+    italicsCs : Option[Boolean] = None,
     capsMode : Option[CapsMode] = None,
     color : Option[RGB] = None,
     lang : Option[String] = None,
@@ -859,14 +846,17 @@ final case class RPr(
     rStyle : Option[String] = None,
     strike : Option[Boolean] = None,
     sz : Option[Int] = None,
+    kern : Option[Int] = None,
     szCs : Option[Int] = None,
     underline : Option[UnderlineOption] = None,
-    vertAlign : Option[VertAlignment] = None
+    vertAlign : Option[VertAlignment] = None    
     ) extends XmlComponent {
   lazy val asXML = (
 <w:rPr>
 {bold.elem(x => <w:b w:val={x.toString}/>)}
 {italics.elem(x => <w:i w:val={x.toString}/>)}
+{boldCs.elem(x => <w:bCs w:val={x.toString}/>)}
+{italicsCs.elem(x => <w:iCs w:val={x.toString}/>)}
 {capsMode.map(_.asXML).getOrElse(NodeSeq.Empty)}
 {color.elem(v => <w:color w:val={v.value}/>)}
 {lang.elem(x => <w:lang w:val={x.toString}/>)}
@@ -876,12 +866,15 @@ final case class RPr(
 {strike.elem(x => <w:strike w:val={x.toString}/>)}
 {sz.elem(x => <w:sz w:val={x.toString}/>)}
 {szCs.elem(x => <w:szCs w:val={x.toString}/>)}
+{kern.elem(x => <w:kern w:val={x.toString}/>)}
 {underline.elem(_.asXML)}
 </w:rPr>      
       )
   def +(x : RPr) = RPr(
       bold = x.bold orElse bold,
       italics = x.italics orElse italics,
+      boldCs = x.boldCs orElse boldCs,
+      italicsCs = x.italicsCs orElse italicsCs,
       capsMode = x.capsMode orElse capsMode,
       color = x.color orElse color,
       lang = x.lang orElse lang,
@@ -900,6 +893,7 @@ final case class R(
     contents : Seq[RunContent] = Seq()) extends ParElement {
   lazy val asXML = (
 <w:r>
+{rPr.onSome(_.asXML)}
 {contents.map(_.asXML)}
 </w:r>      
       )
@@ -1075,12 +1069,53 @@ final case class Tab(
       )
 }
 
+abstract sealed class SpacingLineRule(val value : String) extends Product
+
+case object SLR_AtLeast extends SpacingLineRule("atLeast")
+case object SLR_Exactly extends SpacingLineRule("exactly")
+case object SLR_Auto extends SpacingLineRule("auto")
+
+abstract sealed class Measure[T <: Measure[T]] extends Product {
+  def map(pts : Double => Double, lines : Double => Double) : T      
+}
+
+final case class Pts(v : Double) extends Measure[Pts] {
+  //val to20th = v*20
+  def map(pts : Double => Double, lines : Double => Double) : Pts = Pts(pts(v))
+}
+final case class Lines(v : Double) extends Measure[Pts] {
+//  val to100th = v*100
+//  val to240th = v*240
+  def map(pts : Double => Double, lines : Double => Double) : Lines = Lines(lines(v))
+}
+
+final case class Spacing(
+    after : Option[Measure] = None, // 1/20 pt
+    afterLines : Option[Measure] = None, // 1/100 line
+    before : Option[Measure] = None, // 1/20 pt
+    beforeLines : Option[Measure] = None, // 1/100 line
+    line : Option[Measure] = None, // 1/20 pt (for lineRule = atLeast or exactly) or 1/240 line if (auto)
+    lineRule : Option[Measure] = None
+    ) extends XmlComponent {
+  def r(x : Option[measure],f : Measure => Double) = x.map(y => math.round(f(y)).toInt.toString).getOrElse(null)
+  def asXML = (
+      <w:spacing
+				w:after={r(after)}
+				w:afteLines={r(afterLines)}
+				w:before={r(before)}
+				w:beforeLines={r(beforeLines)}
+				w:line={r(line)}
+				w:lineRune={lineRule.optAttr}/>
+      )
+}
+
 final case class PPr(
     divId : Option[String] = None,
     ind : Option[Ind] = None,
     jc : Option[ST_Jc] = None,
     style : Option[String] = None, //styleId
-    tabs : Seq[Tab] = Seq()
+    tabs : Seq[Tab] = Seq(),
+    spacing : Option[Spacing] = None
     ) extends XmlComponent {
   lazy val asXML = ( 
 <w:pPr>
@@ -1089,6 +1124,7 @@ final case class PPr(
 	{jc.elem(x => <w:jc w:val={x.v}/>)}
 	{style.elem(x => <w:pStyle w:val={x}/>)}
 	{cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}	
+  {spacing.elem(_.asXML)}
 </w:pPr>
 	)
 }

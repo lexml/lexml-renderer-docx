@@ -25,23 +25,23 @@ trait ParRendererState[T <: ParRendererState[T]] {
 }
 
 trait RunRendererState[T <: RunRendererState[T]] {
-
+  def currentRPrStyle : Option[RPr]
 }
 
 trait MainDocRendererState[T <: MainDocRendererState[T]] {  
   def omissisParStyle : Option[PPr]
   def addUnsupported(msg : String, elem : Any) : T
-  def nomeAgrupadorPredefStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
-  def rotuloAgrupadorPredefStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
+  def nomeAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
+  def rotuloAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
+  def nomeAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) : Option[RPr]
+  def rotuloAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) : Option[RPr]  
   def epigrafeParStyle : Option[PPr]
   def ementaParStyle : Option[PPr]
   def preambuloParStyle : Option[PPr]
   def formulaPromulgacaoParStyle : Option[PPr]
   def textoAlteracaoRPrStyle : Option[RPr]
   def setBase(baseUri : Option[URI]) : T
-  def indentAlteracao : Int
-  def currentIndent : Int
-  def setCurrentIndent(ind : Int) : T         
+  def indentAlteracao : Ind           
   def rotuloStyleRPrForDispositivo(t : TipoDispositivo) : Option[RPr]
   def contentStyleRPrForDispositivo(t : TipoDispositivo) : Option[RPr]
   def contentStylePPrForDispositivo(t : TipoDispositivo) : Option[PPr]      
@@ -52,14 +52,16 @@ final case class Constants(
    hyperlinkRPr : Option[RPr] = None,
    hrefIdPrefix : String = "id_href_",
    omissisParStyle : Option[PPr] = None,
-   nomeAgrupadorPredefStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
-   rotuloAgrupadorPredefStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
+   nomeAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
+   rotuloAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
+   nomeAgrupadorPredefRPrStyles : Map[TipoAgrupadorPredef,RPr] = Map(),
+   rotuloAgrupadorPredefRPrStyles : Map[TipoAgrupadorPredef,RPr] = Map(),   
    epigrafeParStyle : Option[PPr] = None,
    ementaParStyle : Option[PPr] = None,
    preambuloParStyle : Option[PPr] = None,
    formulaPromulgacaoParStyle : Option[PPr] = None,
    textoAlteracaoRPrStyle : Option[RPr] = None,
-   indentAlteracao : Int = 100,
+   indentAlteracao : Ind = Ind(start = 100, hanging = 100),
    rotuloStyleRPrForDispositivos : Map[TipoDispositivo,RPr] = Map(),
    contentStyleRPrForDispositivos : Map[TipoDispositivo,RPr] = Map(),
    contentStylePPrForDispositivos  : Map[TipoDispositivo,PPr] = Map()      
@@ -70,12 +72,11 @@ final case class RendererState(
     hrefNext : Int = 1,
     hrefToId : Map[URI,String] = Map(),    
     unsupportedCases : Seq[(String,Any)] = Seq(),
-    currentRPrStyle : Option[RPr] = None,
-    currentIndent : Int = 0,
+    currentRPrStyle : Option[RPr] = None,    
     constants : Constants
     ) extends ParRendererState[RendererState] 
         with MainDocRendererState[RendererState] 
-        with RunRendererState[RendererState] {
+        with RunRendererState[RendererState] {  
   override def getBase = base
   override def setBase(b : Option[URI]) = copy(base = b)
   override def addRef(href : URI) = 
@@ -86,29 +87,45 @@ final case class RendererState(
       val id = constants.hrefIdPrefix + idNum
       (copy(hrefToId = hrefToId + (href -> id), hrefNext = hrefNext + 1),HrefData(id=id))                
   }
+  def mapGetConsiderDefault[K,V](m : Map[K,V],k : K) : Option[V] = {
+    val res = m.get(k).orElse {
+      try { Some(m(k)) } catch { case _ : Exception => None }
+    }
+    println(s"mapGetConsiderDefault: k = ${k}, m = {$m}, m.get(k) = ${m.get(k)}")
+    print("     m(k) = ")
+    try {
+      println(m(k))
+    } catch { case _ : Exception => println("Exception!") }
+    res
+  }
+  
   override def getHyperlinkRPr : Option[RPr] = constants.hyperlinkRPr
   override def addUnsupported(msg : String, elem : Any) =
     copy(unsupportedCases = unsupportedCases :+ ((msg,elem)))      
   override def setCurrentRPrStyle(rPr : Option[RPr]) =
     copy(currentRPrStyle = rPr)
   override def omissisParStyle = constants.omissisParStyle
-  override def nomeAgrupadorPredefStyle(tipo : TipoAgrupadorPredef) = 
-    constants.nomeAgrupadorPredefStyles.get(tipo)
-  override def rotuloAgrupadorPredefStyle(tipo : TipoAgrupadorPredef) = 
-    constants.rotuloAgrupadorPredefStyles.get(tipo)
+  override def nomeAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
+    mapGetConsiderDefault(constants.nomeAgrupadorPredefPPrStyles,tipo)
+  override def rotuloAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
+    mapGetConsiderDefault(constants.rotuloAgrupadorPredefPPrStyles,tipo)
+  override def nomeAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
+    mapGetConsiderDefault(constants.nomeAgrupadorPredefRPrStyles,tipo)
+  override def rotuloAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
+    mapGetConsiderDefault(constants.rotuloAgrupadorPredefRPrStyles,tipo)  
+    
   override def epigrafeParStyle = constants.epigrafeParStyle
   override def ementaParStyle = constants.ementaParStyle
   override def preambuloParStyle = constants.preambuloParStyle
   override def formulaPromulgacaoParStyle = constants.formulaPromulgacaoParStyle
   override def textoAlteracaoRPrStyle = constants.textoAlteracaoRPrStyle  
-  override def indentAlteracao = constants.indentAlteracao  
-  override def setCurrentIndent(ind : Int) = copy(currentIndent = ind)         
+  override def indentAlteracao = constants.indentAlteracao            
   override def rotuloStyleRPrForDispositivo(t : TipoDispositivo) 
-    = constants.rotuloStyleRPrForDispositivos.get(t)
+    = mapGetConsiderDefault(constants.rotuloStyleRPrForDispositivos,t)
   override def contentStyleRPrForDispositivo(t : TipoDispositivo) 
-    = constants.contentStyleRPrForDispositivos.get(t)
+    = mapGetConsiderDefault(constants.contentStyleRPrForDispositivos,t)
   override def contentStylePPrForDispositivo(t : TipoDispositivo) 
-    = constants.contentStylePPrForDispositivos.get(t)
+    = mapGetConsiderDefault(constants.contentStylePPrForDispositivos,t)
 }
 
 object RendererState {
@@ -119,8 +136,7 @@ object RendererState {
           hrefNext = b.hrefNext,
           hrefToId = b.hrefToId,
           unsupportedCases = b.unsupportedCases,
-          currentRPrStyle = a.currentRPrStyle,
-          currentIndent = a.currentIndent,
+          currentRPrStyle = a.currentRPrStyle,          
           constants = a.constants)
     def extract(a : RendererState) = a                          
   }
@@ -137,11 +153,11 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       
        
   def rotulo(r : Rotulo) : RunRenderer[Unit] = 
-    runM()(text(r.rotulo + " "))
+    runM_()(text(r.rotulo + " "))
     
   
   def omissis() : RunRenderer[Unit] = 
-    runM()(ptab(alignment = PTA_Right,leader = Some(TL_Dot),
+    runM_()(ptab(alignment = PTA_Right,leader = Some(TL_Dot),
             relativeTo = PTB_Margin ))  
                 
   def parOmissis(x : Omissis) : ParRenderer[Unit] = 
@@ -158,10 +174,19 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   def agrupadorPredef(ag : AgrupadorPredef) : ParRenderer[Unit] = 
   aspasP(ag.abreAspas,ag.fechaAspas) {      
       for {    
-        nomeAgrupadorStyle <- inspectMDState(_.nomeAgrupadorPredefStyle(ag.tipoAgrupador))
-        rotuloAgrupadorStyle <- inspectMDState(_.nomeAgrupadorPredefStyle(ag.tipoAgrupador))
-        _ <- ag.nomeAgrupador.ifDef(x => parM(nomeAgrupadorStyle)(inlineSeq(x.inlineSeq)))
-        _ <- ag.rotulo.ifDef(x => parM(rotuloAgrupadorStyle)(rotulo(x)))
+        nomeAgrupadorPPrStyle <- inspectMDState(_.nomeAgrupadorPredefPPrStyle(ag.tipoAgrupador))        
+        nomeAgrupadorRPrStyle <- inspectMDState(_.nomeAgrupadorPredefRPrStyle(ag.tipoAgrupador))
+        rotuloAgrupadorPPrStyle <- inspectMDState(_.rotuloAgrupadorPredefPPrStyle(ag.tipoAgrupador))
+        rotuloAgrupadorRPrStyle <- inspectMDState(_.rotuloAgrupadorPredefRPrStyle(ag.tipoAgrupador))
+        _ = println(s"ag.tipoAgrupador = ${ag.tipoAgrupador} rotuloAgrupadorRPrStyle = ${rotuloAgrupadorRPrStyle}")
+        _ <- ag.rotulo.ifDef(x => parM(rotuloAgrupadorPPrStyle)(
+            withStyleRunRenderer(rotuloAgrupadorRPrStyle)(
+            rotulo(x)
+            )))
+        _ <- ag.nomeAgrupador.ifDef(x => parM(nomeAgrupadorPPrStyle)(
+            withStyleRunRenderer(nomeAgrupadorRPrStyle)(
+            inlineSeq(x.inlineSeq)
+            )))        
         _ <- mapM_(ag.elems)(hierarchicalElement)
       } yield (())
     }
@@ -192,7 +217,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
       hd <- modifyPStateV(_.addRef(href))
       rPr <- inspectPState(_.getHyperlinkRPr)
-      _ <- runM(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))
+      _ <- runM_(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))
     } yield (())
   
   def articulacao(a : Articulacao) : ParRenderer[Unit] =
@@ -300,7 +325,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     rPr <- inspectPState(_.currentRPrStyle)
     _ <- mapM_(m.elems)(x => x match {
       case Left(data) => f(data)
-      case Right(txt : String) => runM(rPr)(text(txt))      
+      case Right(txt : String) => runM_(rPr)(text(txt))      
     })
   } yield (())
   
@@ -331,22 +356,40 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   }
   
   def parTexto(rPr : Option[RPr] = None)(txt : String) : ParRenderer[Unit] = 
-    parM()(runM(rPr)(text(txt)))
+    parM()(runM_(rPr)(text(txt)))
   
   def alteracao(a : Alteracao) : ParRenderer[Unit] = {
     val baseUri = a.base.map(_.uri) 
     for {           
       rPrTexto <- inspectMDState(_.textoAlteracaoRPrStyle)
       ind <- inspectMDState(_.indentAlteracao)
-      curIndent <- inspectMDState(_.currentIndent)
-      _ <- modifyMDState(
-          _.setBase(baseUri).setCurrentIndent(curIndent + ind))
-      _ <- mapM_(a.mixedElems.elems)(_.fold(alteracaoElement,parTexto(rPrTexto)))
-      _ <- modifyMDState(
-            _.setCurrentIndent(curIndent)
-             .setBase(None))            
+      _ <- modifyMDState(_.setBase(baseUri))
+      inside = mapM_(a.mixedElems.elems)(_.fold(alteracaoElement,parTexto(rPrTexto))) : ParRenderer[Unit]
+      _ <- indenting(ind)(inside)
+      _ <- modifyMDState(_.setBase(None))            
     } yield (())
   }  
+      
+  def addIndent(indent : Ind, p : P) : P = {
+    val pPr = p.pPr.orElse(Some(PPr())).map { ppr => ppr.copy(ind = Some(indent)) }      
+    p.copy(pPr = pPr)
+  }
+  
+  def addIndents(indent : Ind, elems : Seq[DocxTextComponent]) : Seq[DocxTextComponent] = 
+    elems.collect {
+      case p : P => addIndent(indent,p)
+      case x => x 
+    }
+  
+  
+  def indenting[T](indent : Ind)(pr : ParRenderer[T]) : ParRenderer[T] = State { st =>
+    val st1 = st.copy(contents = Seq())
+    val (st2,res) = pr.run(st1).value
+    val comps = st2.contents
+    val comps1 : Seq[DocxTextComponent] = st.contents ++ addIndents(indent,comps)
+    (st2.copy(contents = comps1),res)
+  }
+  
   
   def alteracaoElement(a : AlteracaoElement) : ParRenderer[Unit] = {             
       val inside = a match {      
@@ -395,11 +438,9 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       _ <- modifyPState(_.setCurrentRPrStyle(st))
     } yield (res)
     
-  def mergeRPr(r1 : Option[RPr],r2 : Option[RPr]) : Option[RPr] =
-    for {
-      v1 <- r1
-      v2 <- r2
-    } yield (v1 + v2) 
+  def mergeRPr(r1 : Option[RPr],r2 : Option[RPr]) : Option[RPr] = {
+      r1.flatMap(x => r2.flatMap(y => Some(x + y)).orElse(Some(x))).orElse(r2)
+    } 
   
   def dispositivoPredefNA(d : DispositivoPredefNA,skipFirst : Boolean) : ParRenderer[Unit] = 
     aspasP(d.abreAspas,d.fechaAspas) {
@@ -446,13 +487,34 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       _ <- conteudo.ifDef(x => x)
     } yield (()))       
   }  
-      
+  
+  private val rotuloArtigoPattern = """(^[aA]rt\.)\s+(\S+)""".r
+  private val rotuloArtigoUnicoPattern = """^artigo\s\+[uú]nico""".r
+  
+  def rotuloArtigo(r : Rotulo) : RunRenderer[Unit] = {
+    val rPrArtigoUnico = Some(RPr(bold = Some(true), italics = Some(true)))
+    val rPrLabelRotuloArtigo = Some(RPr(bold = Some(true)))
+    val rPrNumRotuloArtigo = None    
+    r.rotulo.toLowerCase.trim match {
+      case rotuloArtigoUnicoPattern() =>
+        runM_(rPrArtigoUnico)(text(r.rotulo))
+      case _ => r.rotulo.trim match {
+        case rotuloArtigoPattern(label,num) =>
+          runM_(rPrLabelRotuloArtigo)(text(label + " ")) >>
+          runM_(rPrNumRotuloArtigo)(text(num))
+        case _ =>
+          modifyPState(_.addUnsupported("rótulo de artigo",r)) >>
+          runM_(rPrNumRotuloArtigo)(text(r.rotulo))
+      }
+    }    
+  }
+  
   def artigo(a : Artigo) : ParRenderer[Unit] = 
     aspasP(a.abreAspas,a.fechaAspas)(for {
       rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(a.tipoDispositivo))
       contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(a.tipoDispositivo))
       contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(a.tipoDispositivo))
-      rotuloArt = a.rotulo.ifDef(x => withStyleRunRenderer(rotuloRPr)(rotulo(x)))
+      rotuloArt = a.rotulo.ifDef(rotuloArtigo)
       selectFirst = ({
         case t : TextoDispositivo => (inlineSeq(t.inlineSeqs.head.inlineSeq),true)  
         case OmissisSimples => (omissis,true)        
@@ -524,7 +586,14 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   def insertAbreAspas(p : P) : P = p.insertFirst(abreAspasRun)
     
   def insertFechaAspas(p : P) : P = p.insertLast(fechaAspasRun)
-          
+ 
+  def runM_(rPr : Option[RPr] = None)(rr : RB[Unit]) : PB[Unit] = 
+    for {
+      rPr1 <- inspectPState(_.currentRPrStyle)
+      val rPr2 = mergeRPr(rPr1, rPr)
+      val _ = println(s"runM_: rPr=${rPr}, rPr1=${rPr1}, rPr2=${rPr2}")
+      _ <- runM(rPr2)(rr)
+    } yield (())
 }
 
 final case class MainDocRendererResult(
@@ -534,6 +603,7 @@ final case class MainDocRendererResult(
 
 final case class MainDocRenderer(constants : Constants = Constants()) {  
   def render(doc : LexmlDocument) : MainDocRendererResult = {
+    println("MainDocRenderer.render constants = " + constants)
     val st0 = RendererState(constants = constants) 
     val (d,st1) = Renderers.lexmlDocument(doc).makeMainDoc(st0).value
     val d1 = d.copy(d.contents.filterNot(_.isEmpty))
