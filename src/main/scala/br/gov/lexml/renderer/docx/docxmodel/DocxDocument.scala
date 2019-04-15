@@ -427,61 +427,61 @@ object DocxFile {
     <w:qFormat/>
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="character" w:styleId="PreambuloparChar" w:customStyle="1">
     <w:name w:val="preambulo_par Char"/>
     <w:basedOn w:val="DefaultParagraphFont"/>
     <w:link w:val="preambulopar"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="character" w:styleId="LivrorotuloChar" w:customStyle="1">
     <w:name w:val="livro_rotulo Char"/>
     <w:basedOn w:val="DefaultParagraphFont"/>
     <w:link w:val="livrorotulo"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="character" w:styleId="Artigorotulo" w:customStyle="1">
     <w:name w:val="artigo_rotulo"/>
     <w:basedOn w:val="DefaultParagraphFont"/>
     <w:uiPriority w:val="1"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
- 
+
   <w:style w:type="character" w:styleId="LivrorotuloaltChar" w:customStyle="1">
     <w:name w:val="livro_rotulo_alt Char"/>
     <w:basedOn w:val="LivrorotuloChar"/>
     <w:link w:val="livrorotuloalt"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="character" w:styleId="Artigorotuloalt" w:customStyle="1">
     <w:name w:val="artigo_rotulo_alt"/>
     <w:basedOn w:val="Artigorotulo"/>
     <w:uiPriority w:val="1"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="character" w:styleId="LivrotituloChar" w:customStyle="1">
     <w:name w:val="livro_titulo Char"/>
     <w:basedOn w:val="DefaultParagraphFont"/>
     <w:link w:val="livrotitulo"/>
     <w:qFormat/>
-    
+
     <w:rPr/>
   </w:style>
-  
+
   <w:style w:type="paragraph" w:styleId="Heading">
     <w:name w:val="Heading"/>
     <w:basedOn w:val="Normal"/>
@@ -540,7 +540,7 @@ object DocxFile {
     <w:basedOn w:val="Normal"/>
     <w:link w:val="preambuloparChar"/>
     <w:qFormat/>
-    
+
     <w:pPr/>
     <w:rPr/>
   </w:style>
@@ -550,7 +550,7 @@ object DocxFile {
     <w:next w:val="Normal"/>
     <w:link w:val="livrorotuloChar"/>
     <w:qFormat/>
-    
+
     <w:pPr/>
     <w:rPr/>
   </w:style>
@@ -560,7 +560,7 @@ object DocxFile {
     <w:next w:val="Normal"/>
     <w:link w:val="livrorotuloaltChar"/>
     <w:qFormat/>
-    
+
     <w:pPr/>
     <w:rPr/>
   </w:style>
@@ -569,7 +569,7 @@ object DocxFile {
     <w:basedOn w:val="Normal"/>
     <w:link w:val="livrotituloChar"/>
     <w:qFormat/>
-    
+
     <w:pPr/>
     <w:rPr/>
   </w:style>
@@ -595,12 +595,12 @@ object DocxFile {
       </w:tblCellMar>
     </w:tblPr>
   </w:style>
-</w:styles>       
+</w:styles>
 
   )
 
   lazy val fixedFiles : Map[String,Elem] = Map(
-    "/[Content_Types].xml" -> 
+    "/[Content_Types].xml" ->
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -614,19 +614,19 @@ object DocxFile {
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 </Types>
         ,
-    "_rels/.rels" -> 
+    "_rels/.rels" ->
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="doc" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>            
+</Relationships>
     ,
-    "word/_rels/document.xml.rels" -> 
+    "word/_rels/document.xml.rels" ->
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>
-</Relationships>        
+</Relationships>
     ,
-    "word/fontTable.xml" -> 
+    "word/fontTable.xml" ->
 <w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <w:font w:name="Times New Roman">
     <w:charset w:val="00"/>
@@ -660,9 +660,9 @@ object DocxFile {
     <w:family w:val="roman"/>
     <w:pitch w:val="variable"/>
   </w:font>
-</w:fonts>            
+</w:fonts>
     ,
-    "word/settings.xml" -> 
+    "word/settings.xml" ->
 <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:compat>
     <w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/>
@@ -673,15 +673,15 @@ object DocxFile {
   </w:compat>
   <w:themeFontLang w:val="pt-BR" w:eastAsia="" w:bidi=""/>
 </w:settings>,
-   "word/styles.xml" -> DocxFile.styleElem 
-    
+   "word/styles.xml" -> DocxFile.styleElem
+
   )
-  
+
   def makeMainDocument(elems : Seq[Elem]) = (
 <w:document xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" mc:Ignorable="w14 wp14">
-	<w:body>
-		{NodeSeq.fromSeq(elems)}
-		<w:sectPr>
+  <w:body>
+    {NodeSeq.fromSeq(elems)}
+    <w:sectPr>
       <w:type w:val="nextPage"/>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:left="1701" w:right="1701" w:header="0" w:top="1417" w:footer="0" w:bottom="1417" w:gutter="0"/>
@@ -693,17 +693,17 @@ object DocxFile {
   </w:body>
 </w:document>
       )
-  def makePackageFile(elems : Seq[Elem]) = {    
+  def makePackageFile(elems : Seq[Elem]) = {
     import java.io._
     import java.util.zip._
-    
+
     val mainDoc = makeMainDocument(elems)
     val files = fixedFiles + ("/word/document.xml" -> mainDoc)
-    
+
     val bo = new ByteArrayOutputStream()
     val zo = new ZipOutputStream(bo)
-    for { 
-      (path,root) <- files      
+    for {
+      (path,root) <- files
     } {
       val data = XmlUtils.xmlToByteArray(root)
       val ze = new ZipEntry(path)
@@ -711,20 +711,19 @@ object DocxFile {
       zo.write(data)
       zo.closeEntry()
     }
-    zo.close()    
+    zo.close()
     try { bo.close() } catch { case _ : Exception => }
-    bo.toByteArray()    
-  }                                
+    bo.toByteArray()
+  }
 }
 
-
-final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq()) 
+final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq())
     extends XmlComponent {
   override def asXML : Elem = (
 <w:document xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" mc:Ignorable="w14 wp14">
-	<w:body>
-		{NodeSeq.fromSeq(contents.map(_.asXML))}
-		<w:sectPr>
+  <w:body>
+    {NodeSeq.fromSeq(contents.map(_.asXML))}
+    <w:sectPr>
       <w:type w:val="nextPage"/>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:left="1701" w:right="1701" w:header="0" w:top="1417" w:footer="0" w:bottom="1417" w:gutter="0"/>
@@ -735,7 +734,7 @@ final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq())
     </w:sectPr>
   </w:body>
 </w:document>
-   )  
+   )
 }
 
 sealed trait DocxTextComponent extends Product with XmlComponent {
@@ -745,10 +744,10 @@ sealed trait DocxTextComponent extends Product with XmlComponent {
 final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) extends DocxTextComponent {
   lazy val asXML = (
 <w:p>
-	{pPr.elem(_.asXML)}
-	{runs.eachElem(_.asXML)}
+  {pPr.elem(_.asXML)}
+  {runs.eachElem(_.asXML)}
 </w:p>
-  )      
+  )
   def insertFirst(els : ParElement*) =
     copy(runs = els ++ runs)
   def insertLast(els : ParElement*) =
@@ -761,7 +760,7 @@ sealed trait ParElement extends Product with XmlComponent {
 }
 
 abstract sealed class CapsMode extends Product {
-  def asXML : NodeSeq 
+  def asXML : NodeSeq
 }
 
 case object CM_Caps extends CapsMode {
@@ -771,7 +770,7 @@ case object CM_SmallCaps extends CapsMode {
   def asXML = (<w:smallCaps w:val="true"/>)
 }
 case object CM_Normal extends CapsMode {
-  def asXML = NodeSeq.fromSeq(Seq(      
+  def asXML = NodeSeq.fromSeq(Seq(
       <w:caps w:val="false"/>,
       <w:smallCaps w:val="false"/>
       ))
@@ -795,7 +794,7 @@ final case class Fonts(
       )
 }
 
-abstract sealed class UnderlineOption extends Product with XmlComponent 
+abstract sealed class UnderlineOption extends Product with XmlComponent
 
 case object UO_NoUnderline extends UnderlineOption {
   val asXML = <w:u w:val="false"/>
@@ -822,13 +821,11 @@ case object US_WavyDouble extends UnderlineStyle("wavyDouble")
 case object US_WavyHeavy extends UnderlineStyle("wavyHeavy")
 case object US_Words extends UnderlineStyle("words")
 
-
-
 final case class UO_Underline(color : Option[RGB] = None) extends UnderlineOption {
   val asXML = (<w:u w:val="true" w:color={color.map(_.value).getOrElse(null)}/>)
 }
 
-abstract sealed class VertAlignment(val value : String) extends Product 
+abstract sealed class VertAlignment(val value : String) extends Product
 
 case object VA_Superscript extends VertAlignment("superscript")
 case object VA_Subscript extends VertAlignment("subscript")
@@ -849,7 +846,7 @@ final case class RPr(
     kern : Option[Int] = None,
     szCs : Option[Int] = None,
     underline : Option[UnderlineOption] = None,
-    vertAlign : Option[VertAlignment] = None    
+    vertAlign : Option[VertAlignment] = None
     ) extends XmlComponent {
   lazy val asXML = (
 <w:rPr>
@@ -868,7 +865,7 @@ final case class RPr(
 {szCs.elem(x => <w:szCs w:val={x.toString}/>)}
 {kern.elem(x => <w:kern w:val={x.toString}/>)}
 {underline.elem(_.asXML)}
-</w:rPr>      
+</w:rPr>
       )
   def +(x : RPr) = RPr(
       bold = x.bold orElse bold,
@@ -878,14 +875,14 @@ final case class RPr(
       capsMode = x.capsMode orElse capsMode,
       color = x.color orElse color,
       lang = x.lang orElse lang,
-      fonts = x.fonts orElse fonts,  
+      fonts = x.fonts orElse fonts,
       rStyle = x.rStyle orElse rStyle,
       strike = x.strike orElse strike,
       sz = x.sz orElse sz,
       szCs = x.szCs orElse szCs,
       underline = x.underline orElse underline,
       vertAlign = x.vertAlign orElse vertAlign)
-    
+
 }
 
 final case class R(
@@ -895,7 +892,7 @@ final case class R(
 <w:r>
 {rPr.onSome(_.asXML)}
 {contents.map(_.asXML)}
-</w:r>      
+</w:r>
       )
   def insertFirst(els : RunContent*) = copy(contents = els ++ contents)
   def insertLast(els : RunContent*) = copy(contents = contents ++ els)
@@ -920,8 +917,8 @@ final case class Del(id : String, content : Seq[ParElement] = Seq(), author : Op
     ) extends RunContent {
   lazy val asXML = (
       <w:del w:id={id} w:author={author.getOrElse(null)} date={date.map(_.toString).getOrElse(null)}>
-		{NodeSeq.fromSeq(content.map(_.asXML))}
-		</w:del>
+    {NodeSeq.fromSeq(content.map(_.asXML))}
+    </w:del>
       )
 }
 
@@ -929,8 +926,8 @@ final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Op
     ) extends RunContent {
   lazy val asXML = (
       <w:ins w:id={id} w:author={author.getOrElse(null)} date={date.map(_.toString).getOrElse(null)}>
-		{NodeSeq.fromSeq(content.map(_.asXML))}
-		</w:ins>
+    {NodeSeq.fromSeq(content.map(_.asXML))}
+    </w:ins>
       )
 }
 
@@ -950,13 +947,10 @@ final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Op
 final case class Hyperlink(content : Seq[ParElement] = Seq(), anchor : Option[String] = None, id : Option[String] = None, tooltip : Option[String] = None) extends RunContent {
   lazy val asXML = (
    <w:hyperlink r:id={id.getOrElse(null)} w:anchor={anchor.getOrElse(null)} w:tooltip={tooltip.getOrElse(null)}>
-	 {NodeSeq.fromSeq(content.map(_.asXML))}
-	</w:hyperlink>
+   {NodeSeq.fromSeq(content.map(_.asXML))}
+  </w:hyperlink>
       )
 }
-
-
-
 
 case object NoBreakHyphen extends RunContent {
   val asXML = <w:noBreakHyphen/>
@@ -971,9 +965,7 @@ case class T(text : String, preserveSpace : Boolean = false) extends RunContent 
   override val isEmpty = text.trim.size == 0
 }
 
-
-
-abstract sealed class PTabAlignment(val value : String) extends Product
+abstract sealed class PTabAlignment(val value : String) extends Product 
 
 case object PTA_Left extends PTabAlignment("left")
 case object PTA_Center extends PTabAlignment("center")
@@ -988,11 +980,13 @@ case class PTab(
     alignment : PTabAlignment,
     leader : Option[TabLeader] = None,
     relativeTo : PTabBase) extends RunContent {
-  val asXML = <w:ptab/>
+  val asXML = <w:ptab w:alignment={alignment.value}
+                   w:leader={leader.map(_.value).optAttr}
+                   w:relativeTo={relativeTo.value}/>
 }
 
 /**
- * 
+ *
  * <Relationships ... >
 ...
 <Relationship Id="rId8" TargetMode="Internal"
@@ -1000,24 +994,27 @@ Type="http://purl.oclc.org/ooxml/officeDocument/relationships/customXml"
 Target="math1.xml" />
 ...
 </Relationships>
- * 
+ *
  */
 final case class ContentPart(id : String) extends RunContent {
   val asXML = <w:contentPart r:id={id}/>
 }
 
-
 final case class Ind(
-      start : Int = 0, end : Int = 0, hanging : Int = 0,
-      firstLine : Int = 0//twentieths of a point
+      start : Pts20 = Pts20(0), 
+      end : Pts20 = Pts20(0),
+      hanging : Pts20 = Pts20(0),
+      firstLine : Pts20 = Pts20(0)//twentieths of a point
       ) extends XmlComponent {
   lazy val asXML = (
-<w:ind w:start={start.toString} w:end={end.toString} w:hanging={hanging.toString} 
-			w:firstLine={firstLine.toString}/>
-    )      
+<w:ind w:start={start.value} 
+	w:end={end.value} 
+	w:hanging={hanging.value}
+      w:firstLine={firstLine.value}/>
+    )
 }
 
-abstract sealed class ST_Jc(val v : String) extends Product 
+abstract sealed class ST_Jc(val v : String) extends Product
 
 case object JC_Both extends ST_Jc("both")
 case object JC_Center extends ST_Jc("center")
@@ -1060,13 +1057,17 @@ tab stop location).
 case object TST_Start extends TabStopType("start")
 
 final case class Tab(
-    pos : Int,
-    tabType : TabStopType,
+    pos : Pts20 = Pts20(0),
+    tabType : TabStopType = TST_Start,
     leader : TabLeader = TL_None
-    ) extends RunContent {
+    ) extends Product {
   lazy val asXML = (
-<w:tab w:leader={leader.value} w:pos={pos.toString} w:val={tabType.value}/>
+<w:tab w:leader={leader.value} w:pos={pos.value} w:val={tabType.value}/>
       )
+}
+
+final case object TAB extends RunContent {
+  def asXML = <w:tab/>
 }
 
 abstract sealed class SpacingLineRule(val value : String) extends Product
@@ -1075,37 +1076,38 @@ case object SLR_AtLeast extends SpacingLineRule("atLeast")
 case object SLR_Exactly extends SpacingLineRule("exactly")
 case object SLR_Auto extends SpacingLineRule("auto")
 
-abstract sealed class Measure[T <: Measure[T]] extends Product {
-  def map(pts : Double => Double, lines : Double => Double) : T      
+abstract sealed class Measure[T <: Measure[T]](ratio : Double) extends Product {
+  val v : Double  
+  val value = math.round(ratio*v).toInt.toString   
 }
 
-final case class Pts(v : Double) extends Measure[Pts] {
-  //val to20th = v*20
-  def map(pts : Double => Double, lines : Double => Double) : Pts = Pts(pts(v))
-}
-final case class Lines(v : Double) extends Measure[Pts] {
-//  val to100th = v*100
-//  val to240th = v*240
-  def map(pts : Double => Double, lines : Double => Double) : Lines = Lines(lines(v))
-}
+abstract sealed class Pts[T <: Pts[T]](ratio : Double) extends Measure[T](ratio)
+
+final case class Pts20(v : Double) extends Pts[Pts20](20) 
+
+abstract sealed class Lines[T <: Lines[T]](ratio : Double) extends Measure[T](ratio)
+
+final case class Lines100(v : Double) extends Lines[Lines100](100)
+
+final case class Lines240(v : Double) extends Lines[Lines240](240)
 
 final case class Spacing(
-    after : Option[Measure] = None, // 1/20 pt
-    afterLines : Option[Measure] = None, // 1/100 line
-    before : Option[Measure] = None, // 1/20 pt
-    beforeLines : Option[Measure] = None, // 1/100 line
-    line : Option[Measure] = None, // 1/20 pt (for lineRule = atLeast or exactly) or 1/240 line if (auto)
-    lineRule : Option[Measure] = None
+    after : Option[Pts20] = None, // 1/20 pt
+    afterLines : Option[Lines100] = None, // 1/100 line
+    before : Option[Pts20] = None, // 1/20 pt
+    beforeLines : Option[Lines100] = None, // 1/100 line
+    line : Option[Either[Pts20,Lines240]] = None, // 1/20 pt (for lineRule = atLeast or exactly) or 1/240 line if (auto)
+    lineRule : Option[SpacingLineRule] = None
     ) extends XmlComponent {
-  def r(x : Option[measure],f : Measure => Double) = x.map(y => math.round(f(y)).toInt.toString).getOrElse(null)
+  def r(x : Option[Measure[_]]) : String = x.map(_.value).getOrElse(null) 
   def asXML = (
       <w:spacing
-				w:after={r(after)}
-				w:afteLines={r(afterLines)}
-				w:before={r(before)}
-				w:beforeLines={r(beforeLines)}
-				w:line={r(line)}
-				w:lineRune={lineRule.optAttr}/>
+        w:after={r(after)}
+        w:afterLines={r(afterLines)}
+        w:before={r(before)}
+        w:beforeLines={r(beforeLines)}
+        w:line={r(line.map(_.fold(x => x,x => x)))}
+        w:lineRune={lineRule.map(_.value).optAttr}/>
       )
 }
 
@@ -1117,26 +1119,25 @@ final case class PPr(
     tabs : Seq[Tab] = Seq(),
     spacing : Option[Spacing] = None
     ) extends XmlComponent {
-  lazy val asXML = ( 
+  lazy val asXML = (
 <w:pPr>
-	{divId.elem(n => <w:divId w:val={n}/>)}
-	{ind.elem(_.asXML)}
-	{jc.elem(x => <w:jc w:val={x.v}/>)}
-	{style.elem(x => <w:pStyle w:val={x}/>)}
-	{cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}	
+  {divId.elem(n => <w:divId w:val={n}/>)}
+  {ind.elem(_.asXML)}
+  {jc.elem(x => <w:jc w:val={x.v}/>)}
+  {style.elem(x => <w:pStyle w:val={x}/>)}
+  {cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}
   {spacing.elem(_.asXML)}
 </w:pPr>
-	)
+  )
 }
-
 
 /* final case class RelationshipProp(typ : String, inDoc : Boolean = false)
 
 sealed trait DocxPart extends Product {
-  def data : Array[Byte] 
+  def data : Array[Byte]
   val name : String
   val mimeType : String
-  val relations : Map[String, String] 
+  val relations : Map[String, String]
 }
 
 object DocxPart {
@@ -1153,15 +1154,15 @@ final case class GenByteArrayDocxPart(
     name : String,
     mimeType : String,
     override val data : Array[Byte],
-    relations : Map[String,String] = Map()) extends DocxPart 
+    relations : Map[String,String] = Map()) extends DocxPart
 
 sealed trait XmlDocxPart extends DocxPart {
   def xmlContent : Elem
-  lazy val  data = XmlUtils.xmlToByteArray(xmlContent)        
+  lazy val  data = XmlUtils.xmlToByteArray(xmlContent)
 }
 
 object XmlDocxPart  {
-  def mimeTypes = Map[String,(String,String,Elem,Map[String,String]) => XmlDocxPart](      
+  def mimeTypes = Map[String,(String,String,Elem,Map[String,String]) => XmlDocxPart](
       "application/vnd.openxmlformats-officedocument.custom-properties+xml" -> GenXmlPart,
       "application/vnd.openxmlformats-package.core-properties+xml" -> GenXmlPart,
       "application/vnd.openxmlformats-officedocument.extended-properties+xml" -> GenXmlPart,
@@ -1169,7 +1170,7 @@ object XmlDocxPart  {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml" -> GenXmlPart,
       "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml" -> FontTablePart.fromXML,
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml" -> DocxDocumentPart.fromXML,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml" -> DocxStylesPart.fromXML      
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml" -> DocxStylesPart.fromXML
       )
    def appliesTo(mimeType : String) = mimeTypes.contains(mimeType)
    def apply(name : String, mimeType : String, data : Array[Byte], relations : Map[String,String]) : XmlDocxPart = {
@@ -1181,14 +1182,12 @@ object XmlDocxPart  {
          is.close()
          gen(name,mimeType,e,relations)
        }
-     } 
+     }
    }
 }
 
-
-
 final case class DocxDocumentPart(name : String = "/word/document.xml",
-    relations : Map[String,String] = Map()) extends XmlDocxPart {  
+    relations : Map[String,String] = Map()) extends XmlDocxPart {
   val mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
   lazy val xmlContent = {
     <empty/>
@@ -1196,11 +1195,11 @@ final case class DocxDocumentPart(name : String = "/word/document.xml",
 }
 
 object DocxDocumentPart {
-  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) = 
+  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) =
     DocxDocumentPart(name,rels)
 }
 
-final case class DocxStylesPart(name : String = "/word/styles.xml") extends XmlDocxPart {  
+final case class DocxStylesPart(name : String = "/word/styles.xml") extends XmlDocxPart {
   val mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"
   lazy val xmlContent = {
     <empty/>
@@ -1209,12 +1208,11 @@ final case class DocxStylesPart(name : String = "/word/styles.xml") extends XmlD
 }
 
 object DocxStylesPart {
-  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) = 
+  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) =
     DocxStylesPart(name)
 }
 
-
-final case class FontTablePart(name : String = "/word/fontTable.xml") extends XmlDocxPart {  
+final case class FontTablePart(name : String = "/word/fontTable.xml") extends XmlDocxPart {
   val mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"
   lazy val xmlContent = {
     <empty/>
@@ -1223,23 +1221,23 @@ final case class FontTablePart(name : String = "/word/fontTable.xml") extends Xm
 }
 
 object FontTablePart {
-  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) = 
+  def fromXML(name : String, ignoredMimeType : String,e : Elem, rels : Map[String,String]) =
     FontTablePart(name)
 }
 
 object Relations {
   val mimeType = "application/vnd.openxmlformats-package.relationships+xml"
-  
-  def fromXML(e : Elem) = 
-    (e \ "Relationship").to[Seq].collect { 
+
+  def fromXML(e : Elem) =
+    (e \ "Relationship").to[Seq].collect {
       case x : Elem => ((e \ "@Type").text,
                  (e \ "@Target").text) }.toMap
   def toXML(m : Map[String,String]) = (
     <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-		  { NodeSeq.fromSeq(m.to[Seq].zipWithIndex.collect { 
-		    case ((tp,ta),n) => <Relationship Id={"Id" + n} Type={tp} Target={ta}/>
-		  } ) }
-		</Relationships>
+      { NodeSeq.fromSeq(m.to[Seq].zipWithIndex.collect {
+        case ((tp,ta),n) => <Relationship Id={"Id" + n} Type={tp} Target={ta}/>
+      } ) }
+    </Relationships>
       )
 }
 
@@ -1249,19 +1247,17 @@ final case class GenXmlPart(
     override val xmlContent : Elem,
     override val relations : Map[String,String]) extends XmlDocxPart
 
-
-
 final case class ContentTypes(
     defaults : Map[String,String] = ContentTypes.defaultDefaultTypes,
     overrides : Map[String,String] = Map()
     ) {
   lazy val asXML : Elem = (
       <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-			{ NodeSeq.fromSeq(defaults.to[Seq].collect { case (k,v) => <Default Extension={k} ContentType={v}/> }) }
-			{ NodeSeq.fromSeq(overrides.to[Seq].collect { case(k,v) => <Override PartName={k} ContentType={v}/> }) }
-			</Types>
+      { NodeSeq.fromSeq(defaults.to[Seq].collect { case (k,v) => <Default Extension={k} ContentType={v}/> }) }
+      { NodeSeq.fromSeq(overrides.to[Seq].collect { case(k,v) => <Override PartName={k} ContentType={v}/> }) }
+      </Types>
         )
-  lazy val data = XmlUtils.xmlToByteArray(asXML)    
+  lazy val data = XmlUtils.xmlToByteArray(asXML)
 }
 
 object ContentTypes {
@@ -1272,16 +1268,16 @@ object ContentTypes {
      "jpeg" -> "image/jpeg"
       )
   val relationsMimeType = "application/vnd.openxmlformats-package.relationships+xml"
-  
+
   def fromXML(e : Elem) = {
     ContentTypes(
-        (e \ "Default").to[Seq].collect { 
+        (e \ "Default").to[Seq].collect {
           case x : Elem =>
-            (x \ "@Extension").text -> (x \ "@ContentType").text  
+            (x \ "@Extension").text -> (x \ "@ContentType").text
         }.toMap,
-        (e \ "Override").to[Seq].collect { 
+        (e \ "Override").to[Seq].collect {
           case x : Elem =>
-            (x \ "@PartName").text -> (x \ "@ContentType").text  
+            (x \ "@PartName").text -> (x \ "@ContentType").text
         }.toMap
         )
   }
@@ -1291,13 +1287,13 @@ final case class DocxPackage(
     contentTypes : ContentTypes = ContentTypes(),
     parts : Map[String,DocxPart] = Map(),
     relationships : Map[String,Map[String,String]] = Map()) {
-  
+
   def toByteArray = {
     import java.io._
     import java.util.zip._
-    
+
     val bo = new ByteArrayOutputStream()
-    val zo = new ZipOutputStream(bo)    
+    val zo = new ZipOutputStream(bo)
     def put(path : String, data : Array[Byte]) {
       val ze = new ZipEntry(path)
       zo.putNextEntry(ze)
@@ -1348,6 +1344,5 @@ object DocxPackage {
     }
   }
 }
-        
-        
-*/      
+
+*/

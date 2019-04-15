@@ -357,7 +357,7 @@ object DocxBodyRenderer {
           
     def run(txt : String) : RunRenderer[Unit] = for {
       rrs <- getRRS
-      val el = (
+      el = (
           <w:r>
 				{rrs.style.toRPr}
 				<w:t xml:space="preserve">{txt}</w:t>

@@ -51,8 +51,8 @@ trait MainDocBuilderOps[T] {
           : MB[Unit] = { 
     for {
       v0 <- getMDState
-      val vv0 = mo.extract(v0)
-      val (par,v1) = p.makePar(vv0,pPr).value
+      vv0 = mo.extract(v0)
+      (par,v1) = p.makePar(vv0,pPr).value
       _ <- putDTC(par)
       _ <- mergeMDState(v1)
     } yield (())

@@ -43,8 +43,8 @@ trait ParBuilderOps[T] {
           : PB[Unit] = { 
     for {
       v0 <- getPState
-      val vv0 = mo.extract(v0)
-      val (run,v1) = r.makeRun(vv0,rPr).value
+      vv0 = mo.extract(v0)
+      (run,v1) = r.makeRun(vv0,rPr).value
       _ <- putPE(run)
       _ <- mergePState(v1)
     } yield (())

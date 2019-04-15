@@ -48,9 +48,55 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
 }
 
 
-final case class Constants(
-   hyperlinkRPr : Option[RPr] = None,
+abstract sealed class RenderElement(superClasses_ : RenderElement*) extends Product {
+  val superClasses : Set[RenderElement] = if (superClasses_.isEmpty) { Set(RE_Any) } else { superClasses_.to[Set] }
+}
+  
+
+case object RE_Any extends RenderElement(Seq() :_*) {
+  override val superClasses : Set[RenderElement] = Set()
+}
+case object RE_ParteInicial extends RenderElement
+case object RE_NomesAgrupador extends RenderElement
+case object RE_RotulosAgrupador extends RenderElement
+case object RE_Remissao extends RenderElement
+case object RE_Omissis extends RenderElement
+final case class RE_NomeAgrupador(t : TipoAgrupadorPredef) extends RenderElement(RE_NomesAgrupador)
+final case class RE_RotuloAgrupador(t : TipoAgrupadorPredef) extends RenderElement(RE_RotulosAgrupador)
+case object RE_Epigrafe extends RenderElement(RE_ParteInicial)
+case object RE_Ementa extends RenderElement(RE_ParteInicial)
+case object RE_Preambulo extends RenderElement(RE_ParteInicial)
+case object RE_FormulaPromulgacao extends RenderElement(RE_ParteInicial)
+final case class RE_Dispositivo(t : TipoDispositivo) extends RenderElement
+final case class RE_RotuloDispositivo(t : TipoDispositivo) extends RenderElement
+final case class RE_ConteudoDispositivo(t : TipoDispositivo) extends RenderElement
+case object RE_TextoAlteracao extends RenderElement
+case object RE_AbrevArtigo extends RenderElement
+
+object RenderElementMap {
+  
+}
+
+/*
+   omissisParStyle : Option[PPr] = None,
+   nomeAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
+   rotuloAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),     
+   epigrafeParStyle : Option[PPr] = None,
+   ementaParStyle : Option[PPr] = None,
+   preambuloParStyle : Option[PPr] = None,
+   formulaPromulgacaoParStyle : Option[PPr] = None,
+   contentStylePPrForDispositivos  : Map[TipoDispositivo,PPr] = Map()
+ 
+ 
+ */
+
+
+final case class Constants(   
    hrefIdPrefix : String = "id_href_",
+   pprStyles : Map[RenderElement,PPr] = Map(),
+   rprStyles : Map[RenderElement,RPr] = Map(),
+   /*
+   hyperlinkRPr : Option[RPr] = None,
    omissisParStyle : Option[PPr] = None,
    nomeAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
    rotuloAgrupadorPredefPPrStyles : Map[TipoAgrupadorPredef,PPr] = Map(),
@@ -60,11 +106,12 @@ final case class Constants(
    ementaParStyle : Option[PPr] = None,
    preambuloParStyle : Option[PPr] = None,
    formulaPromulgacaoParStyle : Option[PPr] = None,
-   textoAlteracaoRPrStyle : Option[RPr] = None,
-   indentAlteracao : Ind = Ind(start = 100, hanging = 100),
+   textoAlteracaoRPrStyle : Option[RPr] = None,   
    rotuloStyleRPrForDispositivos : Map[TipoDispositivo,RPr] = Map(),
    contentStyleRPrForDispositivos : Map[TipoDispositivo,RPr] = Map(),
-   contentStylePPrForDispositivos  : Map[TipoDispositivo,PPr] = Map()      
+   contentStylePPrForDispositivos  : Map[TipoDispositivo,PPr] = Map(), */
+   
+   indentAlteracao : Ind = Ind(start = Pts20(15), hanging = Pts20(15))
 ) 
 
 final case class RendererState(
@@ -88,44 +135,35 @@ final case class RendererState(
       (copy(hrefToId = hrefToId + (href -> id), hrefNext = hrefNext + 1),HrefData(id=id))                
   }
   def mapGetConsiderDefault[K,V](m : Map[K,V],k : K) : Option[V] = {
-    val res = m.get(k).orElse {
+    m.get(k).orElse {
       try { Some(m(k)) } catch { case _ : Exception => None }
-    }
-    println(s"mapGetConsiderDefault: k = ${k}, m = {$m}, m.get(k) = ${m.get(k)}")
-    print("     m(k) = ")
-    try {
-      println(m(k))
-    } catch { case _ : Exception => println("Exception!") }
-    res
+    }                
   }
   
-  override def getHyperlinkRPr : Option[RPr] = constants.hyperlinkRPr
+  override def getHyperlinkRPr : Option[RPr] = constants.rprStyles.get(RE_Remissao)
   override def addUnsupported(msg : String, elem : Any) =
     copy(unsupportedCases = unsupportedCases :+ ((msg,elem)))      
   override def setCurrentRPrStyle(rPr : Option[RPr]) =
     copy(currentRPrStyle = rPr)
-  override def omissisParStyle = constants.omissisParStyle
+  override def omissisParStyle = constants.pprStyles.get(RE_Omissis)
   override def nomeAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
-    mapGetConsiderDefault(constants.nomeAgrupadorPredefPPrStyles,tipo)
+    constants.pprStyles.get(RE_NomeAgrupador(tipo))
   override def rotuloAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
-    mapGetConsiderDefault(constants.rotuloAgrupadorPredefPPrStyles,tipo)
+    constants.pprStyles.get(RE_RotuloAgrupador(tipo))
   override def nomeAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
-    mapGetConsiderDefault(constants.nomeAgrupadorPredefRPrStyles,tipo)
+    constants.rprStyles.get(RE_NomeAgrupador(tipo))
   override def rotuloAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
-    mapGetConsiderDefault(constants.rotuloAgrupadorPredefRPrStyles,tipo)  
+    constants.rprStyles.get(RE_RotuloAgrupador(tipo))  
     
-  override def epigrafeParStyle = constants.epigrafeParStyle
-  override def ementaParStyle = constants.ementaParStyle
-  override def preambuloParStyle = constants.preambuloParStyle
-  override def formulaPromulgacaoParStyle = constants.formulaPromulgacaoParStyle
-  override def textoAlteracaoRPrStyle = constants.textoAlteracaoRPrStyle  
+  override def epigrafeParStyle = constants.pprStyles.get(RE_Epigrafe)
+  override def ementaParStyle = constants.pprStyles.get(RE_Ementa)
+  override def preambuloParStyle = constants.pprStyles.get(RE_Preambulo)
+  override def formulaPromulgacaoParStyle = constants.pprStyles.get(RE_FormulaPromulgacao)
+  override def textoAlteracaoRPrStyle = constants.rprStyles.get(RE_TextoAlteracao)  
   override def indentAlteracao = constants.indentAlteracao            
-  override def rotuloStyleRPrForDispositivo(t : TipoDispositivo) 
-    = mapGetConsiderDefault(constants.rotuloStyleRPrForDispositivos,t)
-  override def contentStyleRPrForDispositivo(t : TipoDispositivo) 
-    = mapGetConsiderDefault(constants.contentStyleRPrForDispositivos,t)
-  override def contentStylePPrForDispositivo(t : TipoDispositivo) 
-    = mapGetConsiderDefault(constants.contentStylePPrForDispositivos,t)
+  override def rotuloStyleRPrForDispositivo(t : TipoDispositivo) = constants.rprStyles.get(RE_RotuloDispositivo(t))
+  override def contentStyleRPrForDispositivo(t : TipoDispositivo) = constants.rprStyles.get(RE_ConteudoDispositivo(t))    
+  override def contentStylePPrForDispositivo(t : TipoDispositivo) = constants.pprStyles.get(RE_RotuloDispositivo(t))    
 }
 
 object RendererState {
@@ -152,18 +190,20 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   import RendererState.mergeable
       
        
-  def rotulo(r : Rotulo) : RunRenderer[Unit] = 
-    runM_()(text(r.rotulo + " "))
+  def rotulo(r : Rotulo, rPr : Option[RPr] = None, extraSpace : Boolean = false) : RunRenderer[Unit] = {
+    val suffix = if (extraSpace) { " " }  else { "" }
+    runM_(rPr)(text(r.rotulo + extraSpace))
+  }
     
   
-  def omissis() : RunRenderer[Unit] = 
-    runM_()(ptab(alignment = PTA_Right,leader = Some(TL_Dot),
-            relativeTo = PTB_Margin ))  
+  def omissis() : RunRenderer[Unit] = {    
+    runM_()(tab) 
+  }
                 
   def parOmissis(x : Omissis) : ParRenderer[Unit] = 
     aspasP(x.abreAspas,x.fechaAspas) {
     for {
-      style <- inspectMDState(_.omissisParStyle)
+      style <- inspectMDState(_.omissisParStyle)      
       _ <- parM(style)(omissis)
     } yield (())
   }            
@@ -177,12 +217,10 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
         nomeAgrupadorPPrStyle <- inspectMDState(_.nomeAgrupadorPredefPPrStyle(ag.tipoAgrupador))        
         nomeAgrupadorRPrStyle <- inspectMDState(_.nomeAgrupadorPredefRPrStyle(ag.tipoAgrupador))
         rotuloAgrupadorPPrStyle <- inspectMDState(_.rotuloAgrupadorPredefPPrStyle(ag.tipoAgrupador))
-        rotuloAgrupadorRPrStyle <- inspectMDState(_.rotuloAgrupadorPredefRPrStyle(ag.tipoAgrupador))
-        _ = println(s"ag.tipoAgrupador = ${ag.tipoAgrupador} rotuloAgrupadorRPrStyle = ${rotuloAgrupadorRPrStyle}")
+        rotuloAgrupadorRPrStyle <- inspectMDState(_.rotuloAgrupadorPredefRPrStyle(ag.tipoAgrupador))        
         _ <- ag.rotulo.ifDef(x => parM(rotuloAgrupadorPPrStyle)(
-            withStyleRunRenderer(rotuloAgrupadorRPrStyle)(
-            rotulo(x)
-            )))
+            rotulo(x,rotuloAgrupadorRPrStyle)
+            ))
         _ <- ag.nomeAgrupador.ifDef(x => parM(nomeAgrupadorPPrStyle)(
             withStyleRunRenderer(nomeAgrupadorRPrStyle)(
             inlineSeq(x.inlineSeq)
@@ -217,7 +255,8 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
       hd <- modifyPStateV(_.addRef(href))
       rPr <- inspectPState(_.getHyperlinkRPr)
-      _ <- runM_(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))
+      //_ <- runM_(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))
+      _ <- inlineSeq(r.inlineSeq)      
     } yield (())
   
   def articulacao(a : Articulacao) : ParRenderer[Unit] =
@@ -590,8 +629,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   def runM_(rPr : Option[RPr] = None)(rr : RB[Unit]) : PB[Unit] = 
     for {
       rPr1 <- inspectPState(_.currentRPrStyle)
-      val rPr2 = mergeRPr(rPr1, rPr)
-      val _ = println(s"runM_: rPr=${rPr}, rPr1=${rPr1}, rPr2=${rPr2}")
+      rPr2 = mergeRPr(rPr1, rPr)
       _ <- runM(rPr2)(rr)
     } yield (())
 }
@@ -602,8 +640,7 @@ final case class MainDocRendererResult(
     unsupportedCases : Seq[(String,Any)])
 
 final case class MainDocRenderer(constants : Constants = Constants()) {  
-  def render(doc : LexmlDocument) : MainDocRendererResult = {
-    println("MainDocRenderer.render constants = " + constants)
+  def render(doc : LexmlDocument) : MainDocRendererResult = {    
     val st0 = RendererState(constants = constants) 
     val (d,st1) = Renderers.lexmlDocument(doc).makeMainDoc(st0).value
     val d1 = d.copy(d.contents.filterNot(_.isEmpty))

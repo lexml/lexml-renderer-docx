@@ -73,8 +73,7 @@ trait RunBuilderOps[T] {
   final def text(text : String, preserveSpace : Boolean = true) =
       putRC(T(text, preserveSpace))
   
-  final def tab(pos : Int, tabType : TabStopType, leader : TabLeader = TL_None) =
-    putRC(Tab(pos,tabType,leader))
+  final def tab = putRC(TAB)
   
   final def ptab(alignment : PTabAlignment,leader : Option[TabLeader] = None,
             relativeTo : PTabBase) =

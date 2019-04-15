@@ -1,8 +1,7 @@
 package br.gov.lexml.renderer.docx.test
 
 
-import br.gov.lexml.renderer.docx.ver4.Constants
-import br.gov.lexml.renderer.docx.ver4.MainDocRenderer
+import br.gov.lexml.renderer.docx.ver4._
 import br.gov.lexml.renderer.docx.docxmodel._
 
 import br.gov.lexml.schema.scala._
@@ -19,33 +18,40 @@ object TestRendererV4  extends App {
   import java.io.File
   import scala.collection.JavaConverters._
   
+  val omissisTabs = Seq(Tab(pos=Pts20(72*5.9),tabType=TST_End,leader=TL_Dot))
   
   val consts = Constants(
    formulaPromulgacaoParStyle = None, // Option[PPr]
    epigrafeParStyle = Some(PPr(
        jc = Some(JC_Center),
-       spacing = Some(Spacing(beforeLines = Some(2.0),afterLines=Some(2.0)))
+       spacing = Some(Spacing(beforeLines = Some(Lines100(2.0)),afterLines=Some(Lines100(2.0)))),
+       tabs = omissisTabs
+       
        )), // Option[PPr] 
    ementaParStyle = Some(PPr(       
-       ind = Some(Ind(start=2500, firstLine=400)),
-       spacing = Some(Spacing(beforeLines = Some(2.0),afterLines=Some(2.0))),
-       jc = Some(JC_Both)
+       ind = Some(Ind(start=Pts20(125), firstLine=Pts20(20))),
+       spacing = Some(Spacing(beforeLines = Some(Lines100(2.0)),afterLines=Some(Lines100(2.0)))),
+       jc = Some(JC_Both),
+       tabs = omissisTabs
        )), 
    preambuloParStyle = Some(PPr(              
-       spacing = Some(Spacing(beforeLines = Some(2.0),afterLines=Some(2.0)))
+       spacing = Some(Spacing(beforeLines = Some(Lines100(2.0)),afterLines=Some(Lines100(2.0)))),
+       tabs = omissisTabs
        )), // Option[PPr]
    hyperlinkRPr = None, // Option[RPr]   
-   omissisParStyle = None, // Option[PPr]           
+   omissisParStyle = Some(PPr(
+       tabs = Seq(Tab(pos=Pts20(72*5.9),tabType=TST_End,leader=TL_Dot))
+       )), // Option[PPr]           
    textoAlteracaoRPrStyle = None, // Option[RPr] 
-   indentAlteracao = Ind(start=100,hanging=100),
+   indentAlteracao = Ind(start=Pts20(15),hanging=Pts20(15)),
    nomeAgrupadorPredefPPrStyles = Map[TipoAgrupadorPredef,PPr]( // Map[TipoAgrupadorPredef,PPr]
-       ).withDefaultValue(PPr(jc = Some(JC_Center))),
+       ).withDefaultValue(PPr(jc = Some(JC_Center),tabs=omissisTabs)),
    nomeAgrupadorPredefRPrStyles = Map[TipoAgrupadorPredef,RPr]( // Map[TipoAgrupadorPredef,RPr]
        TAP_Secao -> RPr(italics = Some(true)),
        TAP_Subsecao -> RPr(italics = Some(true)) 
        ).withDefaultValue(RPr(italics = Some(true), capsMode = Some(CM_Caps))),  
    rotuloAgrupadorPredefPPrStyles = Map[TipoAgrupadorPredef,PPr]( // Map[TipoAgrupadorPredef,PPr]
-       ).withDefaultValue(PPr(jc = Some(JC_Center))),
+       ).withDefaultValue(PPr(jc = Some(JC_Center),tabs=omissisTabs)),
    rotuloAgrupadorPredefRPrStyles = Map[TipoAgrupadorPredef,RPr]( // Map[TipoAgrupadorPredef,RPr]
        ).withDefaultValue(RPr(bold = Some(true), capsMode = Some(CM_Caps))),    
    rotuloStyleRPrForDispositivos = Map( // Map[TipoDispositivo,RPr],
@@ -53,7 +59,7 @@ object TestRendererV4  extends App {
    contentStyleRPrForDispositivos = Map( // Map[TipoDispositivo,RPr]
        ),
    contentStylePPrForDispositivos  = Map( // Map[TipoDispositivo,PPr] 
-       )
+       ).withDefaultValue(PPr(tabs=omissisTabs))
   )
   println("consts = " + consts)
   
@@ -132,7 +138,8 @@ object TestRendererV4  extends App {
               .setUIPriority(1)
               .copy(default = true,
                   pPr = Some(PPr(
-                      spacing = Some(Spacing(line=Some(1.5)))
+                      spacing = Some(Spacing(line=Some(Right(Lines240(1.5))))),
+                      tabs = Seq(Tab(pos=Pts20(72*5.9),tabType=TST_End,leader=TL_Dot))
                       ))),
             Style(id = "DefaultCharacter",`type` = ST_Character)
               .setName("Default Character")
