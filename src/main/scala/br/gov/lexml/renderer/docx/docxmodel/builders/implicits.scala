@@ -7,11 +7,10 @@ import br.gov.lexml.renderer.docx.docxmodel._
 
 object implicits {
   implicit class RunBuilderMonadStmtOps[T](r : RunBuilderMonadStmt[T]) {
-    def makeRun(v0 : T,rPr : Option[RPr] = None) : Eval[(R,T)] = {
+    def makeRun(v0 : T,rPr : Option[RPr] = None) : Eval[(R,T)] =
       r.run(RunBuilderState(value = v0)) map { case (rs,_) =>
           (R(rPr = rPr, contents = rs.contents),rs.value)          
-      }
-    }
+      }      
   }
   
   implicit class ParBuilderMonadStmtOps[T](r : ParBuilderMonadStmt[T]) {

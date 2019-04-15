@@ -12,6 +12,7 @@ import br.gov.lexml.renderer.docx.docxmodel.builders.implicits.RichOption1
 final case class StyleOptField[T](
     val ft : StyleFieldType[T],val value : T)
      extends XmlComponent {
+  this.ensuring(value!=null)
   def asXML = ft.toXML(value)  
 }
 
@@ -21,7 +22,7 @@ sealed abstract class StyleFieldType[T](val name : String)
 }
 
 sealed abstract class StyleValFieldType[T](name : String)(implicit ct : ClassTag[T]) 
-  extends StyleFieldType[T](name)(ct) {
+  extends StyleFieldType[T](name)(ct) {  
   override def toXML(value : T) : Elem =
     (<w:elem w:val={value.toString} />
 			).copy(label = name)
@@ -188,8 +189,283 @@ final case class Styles(
     styles : Seq[Style] = Seq()) extends XmlComponent {
   def asXML = (
       <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w14">
+			{docDefaults.map(_.asXML)}
 			{latentStyles.onSome(_.asXML)}
 			{styles.map(_.asXML)}
 			</w:styles>
       )
 }
+
+object DefaultStyles {
+  
+  private val sb = Seq.newBuilder[Style]
+  
+  def makePPrStyle(id : String, name : String, link : String = null,basedOn : String = null,
+      default : Boolean = false)(pPr : PPr) = {
+    val st = Style(id = id, `type` = ST_Paragraph)
+      .setName(name)
+    val st1 = if(link != null) { st.setLink(link) } else { st }
+    val basedOn2 = Option(basedOn).orElse(pPr.pStyle)
+    val st2 = basedOn2.map { st1.setBasedOn(_) }.getOrElse{ st1 }
+    val st3 = st2      
+      .setUIPriority(1)      
+      .copy(          
+          pPr = Some(pPr.copy(pStyle=None)),
+          default = default
+      )
+    sb += st3
+    st3
+  }
+  
+  def makeRPrStyle(id : String, name : String, link : String = null,basedOn : String = null,
+      default : Boolean = false)(rPr : RPr) = {
+    val st = Style(id = id, `type` = ST_Character)
+      .setName(name)
+    val st1 = if(link != null) { st.setLink(link) } else { st }
+    val basedOn2 = Option(basedOn).orElse(rPr.rStyle)
+    val st2 = basedOn2.map { st1.setBasedOn(_) }.getOrElse{ st1 }
+    val st3 = st2      
+      .setUIPriority(1)      
+      .copy(          
+          rPr = Some(rPr.copy(rStyle=None)),
+          default = default
+      )
+    sb += st3
+    st3
+  }
+  
+  val omissisTabs = Seq(
+      Tab( pos = Pts20(72*5.9), tabType = TST_End, leader = TL_Dot ) 
+  )
+  
+  val font = Fonts(
+      ascii = Some("Arial"),
+      cs = Some("Arial"),
+      hAnsi = Some("Arial"))
+    
+  
+
+  val defaultRPr = RPr(
+      fonts = Some(font),
+      sz = Some(20),
+      szCs = Some(20)
+      )
+  
+  val defaultPPr = PPr(      
+      ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+      ) ;
+              
+  val docDefault = DocDefaults(
+      rPr = Some(defaultRPr),
+      pPr = Some(defaultPPr))
+  
+  val defaultParStyle =
+        makePPrStyle("DefaultParagraph","Default Paragraph",
+            link = "DefaultCharacter",default=true)(PPr(
+                      spacing = Some(Spacing(after=Some(Pts20(6)))),                      
+                      tabs = omissisTabs,
+                      jc = Some(JC_Both),
+                      ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+                      ))   
+  
+  val indentAlteracao1 = Ind(
+      start=Pts20(40))                      
+                      
+  val defaultCharStyle =
+    makeRPrStyle("DefaultCharacter","Default Character",
+            link = "DefaultParagraph",default=true)(defaultRPr)        
+  
+  def rPrRef(id : String) = RPr(rStyle = Some(id))
+  def pPrRef(id : String) = PPr(pStyle = Some(id))
+            
+  //Any 
+  val pprAny = PPr(
+      pStyle = Some(defaultParStyle.id)
+  )
+  
+  //Epígrafe
+  val epigrafePPrStyle = makePPrStyle(
+      "EpigrafeParagrafo","Epígrafe (parágrafo)",
+      link = "EpigrafeCaracter",basedOn = defaultParStyle.id)(
+          PPr(        
+              jc = Some(JC_Center),
+              spacing = Some(
+                Spacing(
+                  before = Some(Pts20(12)),
+                  after = Some(Pts20(12))
+                )
+              )
+           )       
+         )
+          
+  val epigrafeRPrStyle = makeRPrStyle(
+        "EpigrafeCaracter", "Epígrafe (caractere)",
+        link = "EpigrafeParagrafo",
+        basedOn = defaultCharStyle.id)(
+            RPr(                              
+              sz = Some(24),
+              szCs = Some(24),
+              capsMode =  Some(CM_Caps),
+              bold = Some(true),
+              boldCs = Some(true)
+           )       
+         )      
+      
+  val pprEpigrafe = pPrRef(epigrafePPrStyle.id)    
+    
+  val rprEpigrafe = rPrRef(epigrafeRPrStyle.id)
+                  
+  //Ementa
+  
+  val ementaPPrStyle = makePPrStyle(
+      "EmentaParafrafo","Ementa (parágrafo)",
+      link = "EmentaCaracter")(  
+    PPr(       
+        pStyle = Some(defaultParStyle.id),
+        ind = Some(Ind(start=Pts20(198.45))),
+        spacing = Some(Spacing(
+            after = Some(Pts20(12)),
+            line = Some(Left(Pts20(12))),
+            lineRule = Some(SLR_AtLeast)))        
+    ))
+  
+  val ementaRPrStyle = makeRPrStyle(
+      "EmentaCaracter","Ementa (caractere)",
+      link="EmentaParagrafo")(RPr(
+        rStyle = Some(defaultCharStyle.id),
+        sz = Some(18),
+        szCs = Some(18),
+        bold = Some(true),
+        italics = Some(true)
+    ))
+    
+  val pprEmenta = pPrRef(ementaPPrStyle.id)
+    
+  val rprEmenta = rPrRef(ementaRPrStyle.id)
+  
+  //Preambulo
+  val preambuloPPrStyle = makePPrStyle(
+      "PreambuloParagrafo","Preambulo (parágrafo)",
+      link="PreambuloCaracter")(
+    PPr(  
+         pStyle = Some(defaultParStyle.id),
+         spacing = Some(Spacing(
+             beforeLines = Some(Lines100(2.0)),
+             afterLines=Some(Lines100(2.0)))
+         )
+    ))
+  
+  val preambuloRPrStyle = makeRPrStyle(
+      "PreambuloCaracter","Preambulo (caractere)",
+      link="PreambuloParagrafo")(
+      RPr(
+        rStyle = Some(defaultCharStyle.id)        
+    ))
+    
+  val pprPreambulo = pPrRef(preambuloPPrStyle.id)
+  
+  val rprPreambulo = rPrRef(preambuloRPrStyle.id)
+        
+  //Omissis
+  val pprOmissis = pPrRef(defaultParStyle.id)
+    
+    
+  //Nome Agrupador
+  
+  val nomeAgrupadorPPrStyle = makePPrStyle(
+      "NomeAgrupadorParagrafo","Nome de Agrupador (parágrafo)",
+      link="NomeAgrupadorCaracter")(PPr(
+          pStyle = Some(defaultParStyle.id),
+          jc = Some(JC_Center)
+      ))
+   
+  
+  val nomeAgrupadorRPrStyle = makeRPrStyle(
+      "NomeAgrupadorCaracter","Nome de Agrupador (caracter)",
+      link="NomeAgrupadorParagrafo")(RPr(
+          rStyle = Some(defaultCharStyle.id),
+          italics = Some(true), 
+          capsMode = Some(CM_Caps),
+          sz = Some(22),
+          szCs = Some(22)
+      ))
+      
+  val rprNomeAgrupador = rPrRef(nomeAgrupadorRPrStyle.id)
+  
+  val pprNomeAgrupador = pPrRef(nomeAgrupadorPPrStyle.id)
+  
+  //Rotulo Agrupador
+  
+  val rotuloAgrupadorPPrStyle = makePPrStyle(
+      "RotuloAgrupadorParagrafo","Rótulo de Agrupador (parágrafo)",
+      link="RotuloAgrupadorCaracter")(PPr(
+          pStyle = Some(defaultParStyle.id),
+          jc = Some(JC_Center)
+      ))
+      
+  val rotuloAgrupadorRPrStyle = makeRPrStyle(
+      "RotuloAgrupadorCaracter","Rótulo de Agrupador (caracter)",
+      link="RotuloAgrupadorParagrafo")(RPr(
+          rStyle = Some(defaultCharStyle.id),
+          bold = Some(true), 
+          capsMode = Some(CM_Caps),
+          sz = Some(24),
+          szCs = Some(24)
+      ))
+  
+  val pprRotuloAgrupador = pPrRef(rotuloAgrupadorPPrStyle.id)
+      
+  val rprRotuloAgrupador = rPrRef(rotuloAgrupadorRPrStyle.id) 
+      
+  
+  //Secao e subsecao
+  
+  val secaoSubsecaoRPrStyle = makeRPrStyle(
+      "SecaoSubsecaoCaracter","Seção e Subseção (caractere)")(RPr( 
+      rStyle = Some(defaultCharStyle.id),
+      italics = Some(true),
+      sz = Some(22),
+      szCs = Some(22)
+  ))
+  
+  val rprSecaoSubsecao = rPrRef(secaoSubsecaoRPrStyle.id)
+  
+  //Dispositivos
+  
+  val conteudoDispositivoPPrStyle = makePPrStyle(
+     "ConteudoDispositivoParagrafo","Conteúdo de Dispositivo (caractere)")(
+      PPr(
+        pStyle = Some(defaultParStyle.id),
+        ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+      ))
+  
+  val pprConteudoDispositivo = pPrRef(conteudoDispositivoPPrStyle.id) 
+  
+  //Artigos
+  
+  val tituloArtigoRPrStyle = makeRPrStyle(
+      "TituloArtigoCaracter","Título de Artigo (caractere)")(
+      RPr(
+        rStyle = Some(defaultCharStyle.id),
+        bold = Some(true),
+        boldCs = Some(true)
+        ))
+  
+  val rprTituloArtigo = rPrRef(tituloArtigoRPrStyle.id)
+      
+  //Remissoes
+  
+  val linkRemissaoRPrStyle = makeRPrStyle(
+      "RemissaoCaracter","Remissão (caractere)")(RPr(
+       rStyle = Some(DefaultStyles.defaultCharStyle.id),
+       color = Some(RGB(0.2,0.2,0.2)
+   )))
+  
+  val rprLinkRemissao = rPrRef(linkRemissaoRPrStyle.id)
+        
+  val styles = Styles(
+      docDefaults = Seq(docDefault),
+      styles=sb.result
+  )
+}
+

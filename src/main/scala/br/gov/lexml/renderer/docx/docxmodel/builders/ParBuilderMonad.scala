@@ -50,6 +50,16 @@ trait ParBuilderOps[T] {
     } yield (())
   }
   
+  final def hyperlink(anchor : Option[String] = None, 
+        id : Option[String] = None, 
+        tooltip : Option[String] = None)
+        (pb : PB[Unit]) : PB[Unit] = State { st0 =>    
+    val st1 = st0.copy(contents = Seq())       
+    val (st2,res) = pb.run(st1).value
+    val st3 = st2.copy(contents = st0.contents :+ Hyperlink(st2.contents,anchor,id,tooltip))
+    (st3,res)
+  }
+  
   
 }
   

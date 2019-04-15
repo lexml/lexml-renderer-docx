@@ -60,18 +60,15 @@ trait RunBuilderOps[T] {
       (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
       enclosingRun(pb)(Ins(id,_,author,date))
 
-  final def hyperlink[T1](anchor : Option[String] = None, 
-        id : Option[String] = None, 
-        tooltip : Option[String] = None)
-        (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
-      enclosingRun(pb)(Hyperlink(_,anchor, id, tooltip))
+  
   
   final def noBreakHyphen = putRC(NoBreakHyphen)
   
   final def sym(font : String, char : String) = putRC(Sym(font, char))
   
-  final def text(text : String, preserveSpace : Boolean = true) =
-      putRC(T(text, preserveSpace))
+  final def text(text : String, preserveSpace : Boolean = true) = {
+    putRC(T(text, preserveSpace))
+  }
   
   final def tab = putRC(TAB)
   
