@@ -50,6 +50,8 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
 
 abstract sealed class RenderElement(superClasses_ : RenderElement*) extends Product {
   val superClasses : Set[RenderElement] = if (superClasses_.isEmpty) { Set(RE_Any) } else { superClasses_.to[Set] }
+  final def apply[T](m : Map[RenderElement,T]) : Option[T] =
+    m.get(this).orElse(superClasses.to[Seq
 }
   
 
@@ -67,11 +69,12 @@ case object RE_Epigrafe extends RenderElement(RE_ParteInicial)
 case object RE_Ementa extends RenderElement(RE_ParteInicial)
 case object RE_Preambulo extends RenderElement(RE_ParteInicial)
 case object RE_FormulaPromulgacao extends RenderElement(RE_ParteInicial)
-final case class RE_Dispositivo(t : TipoDispositivo) extends RenderElement
-final case class RE_RotuloDispositivo(t : TipoDispositivo) extends RenderElement
-final case class RE_ConteudoDispositivo(t : TipoDispositivo) extends RenderElement
+case object RE_RotulosDispositivo extends RenderElement
+final case class RE_RotuloDispositivo(t : TipoDispositivo) extends RenderElement(RE_RotulosDispositivo)
+case object RE_ConteudosDispositivo extends RenderElement 
+final case class RE_ConteudoDispositivo(t : TipoDispositivo) extends RenderElement(RE_ConteudosDispositivo)
 case object RE_TextoAlteracao extends RenderElement
-case object RE_AbrevArtigo extends RenderElement
+case object RE_AbrevArtigo extends RenderElement(RE_RotulosDispositivo)
 
 object RenderElementMap {
   
