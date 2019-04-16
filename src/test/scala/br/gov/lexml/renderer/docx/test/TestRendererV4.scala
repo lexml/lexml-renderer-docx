@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils
 import br.gov.lexml.doc.xml.XmlConverter
 import org.apache.commons.io.IOUtils
 import br.gov.lexml.doc._
+import br.gov.lexml.renderer.docx.renderers.PackageRenderer
 
 object TestRendererV4  extends App {  
   import java.io.File
@@ -35,16 +36,32 @@ object TestRendererV4  extends App {
   try { destDir.mkdirs() } catch { case _ : Exception => }
   
   var count : Int = 1
-              
+  
+  def addOriginal(old : Option[Array[Byte]]) : Option[Array[Byte]] = {
+    import scala.xml._
+    val oldXml = old.map(x => XML.loadString(new String(x,"utf-8"))).
+      getOrElse(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>)
+    val newXml = oldXml.copy(
+        child = oldXml.child :+ (<Relationship Id="OriginalLexMLDocument" Type="http://www.lexml.gov.br/doc"
+                              Target="original.xml"/>)
+                              )
+    Some(PackageRenderer.xmlToByteArray(newXml))
+  }
+  
   files.foreach({ 
     case f =>      
-      val fname = s"result${count}"      
+      val fname = f.getName.substring(0,f.getName.length()-4)      
       println(s"(${count}): Rendering: " + f + " to " + fname)
       count = count + 1
       val dst = new File(destDir,fname + ".docx")
       val dst2 = new File(destDir,fname + ".xml")
       FileUtils.copyFile(f, dst2) 
-      val res = lexmlToDocx.convert(FileUtils.readFileToByteArray(f))
+      val src = FileUtils.readFileToByteArray(f)
+      val res = lexmlToDocx.convert(src,
+          Seq(
+           ("original.xml" -> ((_ : Option[Array[Byte]]) => Some(src))),
+           ("_rels/.rels" -> addOriginal)
+              ))
       FileUtils.writeByteArrayToFile(dst,res)      
     })
 }    

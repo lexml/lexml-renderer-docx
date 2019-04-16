@@ -126,6 +126,8 @@ object Constants {
        RE_NomeAgrupador(TAP_Secao) -> DefaultStyles.rprSecaoSubsecao,
        RE_NomeAgrupador(TAP_Subsecao) -> DefaultStyles.rprSecaoSubsecao,
        RE_RotulosAgrupador -> DefaultStyles.rprRotuloAgrupador,
+       RE_RotuloAgrupador(TAP_Secao) -> DefaultStyles.rprRotuloSecaoSubsecao,
+       RE_RotuloAgrupador(TAP_Subsecao) -> DefaultStyles.rprRotuloSecaoSubsecao,       
        RE_Ementa -> DefaultStyles.rprEmenta,
        RE_Epigrafe -> DefaultStyles.rprEpigrafe,                    
        RE_Preambulo -> DefaultStyles.rprPreambulo,
@@ -523,14 +525,16 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       r1.flatMap(x => r2.flatMap(y => Some(x + y)).orElse(Some(x))).orElse(r2)
     } 
   
-  def rPrRotuloForDispositivo(t : TipoDispositivoPredef,r : Option[Rotulo]) : ParRenderer[Option[RPr]] = for {
+  def rPrRotuloForDispositivo(t : TipoDispositivoPredef,r : Option[Rotulo]) : ParRenderer[Option[RPr]] =
+    inspectMDState(_.rotuloStyleRPrForDispositivo(t))
+    /* for {
     rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(t))  
     rPr = t match {
       case TDP_Paragrafo if r.map(_.rotulo.trim.contains("nico")).getOrElse(false) => 
         Some(rotuloRPr.getOrElse(RPr()).copy(italics = Some(true), bold = Some(true)))
       case _ => rotuloRPr
     }    
-  } yield (rPr)
+  } yield (rPr) */
     
   def dispositivoPredefNA(d : DispositivoPredefNA,skipFirst : Boolean) : ParRenderer[Unit] = 
     aspasP(d.abreAspas,d.fechaAspas,d.notaAlteracao) {
@@ -774,10 +778,19 @@ final case class DocxDocument(mainDoc : DocxMainDocument)
 
 object PackageRenderer {
   private def logger = LoggerFactory.getLogger(classOf[PackageRenderer])
+  type ReplaceFunc = Option[Array[Byte]] => Option[Array[Byte]]
+  def xmlToByteArray(e : scala.xml.Elem) = {
+    import java.io._
+    import scala.xml._
+    val w = new StringWriter()
+    XML.write(w,e,"utf-8",true,null,MinimizeMode.Always)
+    w.close()
+    w.toString().getBytes("utf-8")
+  }
 }
 
 class PackageRenderer(referenceDocx : Array[Byte]) {
-  import PackageRenderer.logger
+  import PackageRenderer._  
   
   private lazy val referenceEntries = {
     import java.io._
@@ -794,14 +807,22 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     zis.close()
     b.result()
   }
-     
-  private def writeReplace(transf : (String,Option[Array[Byte]] => Array[Byte])*) : Array[Byte] = {    
+    
+  private def writeReplace(transf : (String,ReplaceFunc)*) : Array[Byte] = {    
     import java.io._
     import java.util.zip._
-    val m : Map[String,Option[Array[Byte]] => Array[Byte]] = transf.toMap
+    val m : Map[String,ReplaceFunc] =
+      transf.groupBy(_._1).mapValues { l =>
+        val l1 = l.map(_._2)
+        val f = l1.foldLeft((x => x) : ReplaceFunc) { case(sofar,f) => { x => sofar(f(x)) } }
+        f
+      }
+    
+      transf.toMap
     val bos = new ByteArrayOutputStream()
     val zos = new ZipOutputStream(bos)
-    val m1 = referenceEntries ++ m.map{ case (k,f) => (k,f(referenceEntries.get(k)))}
+    val m1 = referenceEntries ++ m.flatMap{ case (k,f) =>
+      f(referenceEntries.get(k)).map(d => (k,d)) }      
     m1.foreach { case (name,data) =>
       val ze = new ZipEntry(name)
       ze.setSize(data.length)
@@ -813,14 +834,7 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     bos.toByteArray()
   }
   
-  private def xmlToByteArray(e : scala.xml.Elem) = {
-    import java.io._
-    import scala.xml._
-    val w = new StringWriter()
-    XML.write(w,e,"utf-8",true,null,MinimizeMode.Always)
-    w.close()
-    w.toString().getBytes("utf-8")
-  }
+  
        
   private lazy val stylesElem = DefaultStyles.styles.asXML  //  DocxMainPartRenderer.stylesElem
   
@@ -837,18 +851,21 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     xmlToByteArray(relXml1)
   }
   
-  def render(doc : LexmlDocument) : Array[Byte] = {              
+  def render(doc : LexmlDocument,
+      extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {              
     val renderer = new MainDocRenderer(Constants.default)
     val res = renderer.render(doc)
     res.unsupportedCases.foreach { case (msg,x) =>
       logger.warn("Caso não suportado pelo renderer: " + msg + "\n" + x.toString)       
     }        
-    val mainDoc = res.doc.asXML
-    writeReplace(
-       "word/document.xml" -> (_ => xmlToByteArray(mainDoc)),
-       "word/styles.xml" -> (_ => xmlToByteArray(stylesElem)),
-       "word/_rels/document.xml.rels" -> (x => addHyperlinkRels(res.hrefData,x))
-    )
+    def subst(v : Array[Byte]) : ReplaceFunc = _ => Some(v)
+    val mainDoc = res.doc.asXML    
+    val replaceFuncs : Seq[(String,ReplaceFunc)] = Seq(
+        "word/document.xml" -> subst(xmlToByteArray(mainDoc)),
+       "word/styles.xml" -> subst(xmlToByteArray(stylesElem)),
+       "word/_rels/document.xml.rels" -> ((x : Option[Array[Byte]]) => Some(addHyperlinkRels(res.hrefData,x)))) ++
+       extraReplace
+    writeReplace(replaceFuncs :_*)
   }
 }
 

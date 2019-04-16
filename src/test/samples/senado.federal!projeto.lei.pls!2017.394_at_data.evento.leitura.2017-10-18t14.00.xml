@@ -570,7 +570,7 @@
           </Artigo><Secao id="cap5_sec1">
             
             
-            <Rotulo>SEÇÃO I</Rotulo>
+            <Rotulo>Seção I</Rotulo>
             <NomeAgrupador>Plano individual de atendimento</NomeAgrupador>
             <Artigo id="art32">
             
@@ -618,7 +618,7 @@
           </Secao><Secao id="cap5_sec2">
             
             
-            <Rotulo>SEÇÃO II</Rotulo>
+            <Rotulo>Seção II</Rotulo>
             <NomeAgrupador>Acolhimento Familiar</NomeAgrupador>
             <Artigo id="art33">
             
@@ -774,7 +774,7 @@
           </Secao><Secao id="cap5_sec3">
             
             
-            <Rotulo>SEÇÃO III</Rotulo>
+            <Rotulo>Seção III</Rotulo>
             <NomeAgrupador>Acolhimento Institucional</NomeAgrupador>
             <Artigo id="art37">
             
@@ -1380,7 +1380,7 @@
             <Secao id="cap9_sec1">
             
             
-            <Rotulo>SEÇÃO I</Rotulo>
+            <Rotulo>Seção I</Rotulo>
             <NomeAgrupador>Disposições gerais</NomeAgrupador>
             <Artigo id="art54">
             
@@ -1458,7 +1458,7 @@
           </Secao><Secao id="cap9_sec2">
             
             
-            <Rotulo>SEÇÃO II</Rotulo>
+            <Rotulo>Seção II</Rotulo>
             <NomeAgrupador>Guarda</NomeAgrupador>
             <Artigo id="art59">
             
@@ -1614,7 +1614,7 @@
           </Secao><Secao id="cap9_sec3">
             
             
-            <Rotulo>SEÇÃO III</Rotulo>
+            <Rotulo>Seção III</Rotulo>
             <NomeAgrupador>Adoção</NomeAgrupador>
             <Artigo id="art68">
             
@@ -1943,7 +1943,7 @@
           </Artigo><Subsecao id="cap9_sec3_sub1">
             
             
-            <Rotulo>SUBSEÇÃO I</Rotulo>
+            <Rotulo>Subseção I</Rotulo>
             <NomeAgrupador>Registros locais e Cadastro Nacional de Adotandos e Adotantes</NomeAgrupador>
             <Artigo id="art88">
             
@@ -2069,7 +2069,7 @@
           </Subsecao><Subsecao id="cap9_sec3_sub2">
             
             
-            <Rotulo>SUBSEÇÃO II</Rotulo>
+            <Rotulo>Subseção II</Rotulo>
             <NomeAgrupador>Habilitação dos pretendentes à adoção</NomeAgrupador>
             <Artigo id="art96">
             
@@ -2243,7 +2243,7 @@
           </Subsecao><Subsecao id="cap9_sec3_sub3">
             
             
-            <Rotulo>SUBSEÇÃO III</Rotulo>
+            <Rotulo>Subseção III</Rotulo>
             <NomeAgrupador>Adoção internacional</NomeAgrupador>
             <Artigo id="art103">
             
@@ -2351,7 +2351,7 @@
           </Subsecao><Subsecao id="cap9_sec3_sub4">
             
             
-            <Rotulo>SUBSEÇÃO IV</Rotulo>
+            <Rotulo>Subseção IV</Rotulo>
             <NomeAgrupador>Habilitação de residente no exterior</NomeAgrupador>
             <Artigo id="art109">
             
@@ -2447,7 +2447,7 @@
           </Subsecao><Subsecao id="cap9_sec3_sub5">
             
             
-            <Rotulo>SUBSEÇÃO V</Rotulo>
+            <Rotulo>Subseção V</Rotulo>
             <NomeAgrupador>Adoção internacional por brasileiro</NomeAgrupador>
             <Artigo id="art112">
             
@@ -2567,7 +2567,7 @@
           </Subsecao><Subsecao id="cap9_sec3_sub6">
             
             
-            <Rotulo>SUBSEÇÃO VI</Rotulo>
+            <Rotulo>Subseção VI</Rotulo>
             <NomeAgrupador>Organismos credenciados</NomeAgrupador>
             <Artigo id="art121">
             
@@ -2802,7 +2802,7 @@
             <Secao id="cap10_sec1">
             
             
-            <Rotulo>SEÇÃO I</Rotulo>
+            <Rotulo>Seção I</Rotulo>
             <NomeAgrupador>Disposições gerais</NomeAgrupador>
             <Artigo id="art130">
             
@@ -2886,7 +2886,7 @@
           </Secao><Secao id="cap10_sec2">
             
             
-            <Rotulo>SEÇÃO II</Rotulo>
+            <Rotulo>Seção II</Rotulo>
             <NomeAgrupador>Justiça da Criança e do Adolescente</NomeAgrupador>
             <Artigo id="art135">
             
@@ -3018,7 +3018,7 @@
           </Secao><Secao id="cap10_sec3">
             
             
-            <Rotulo>SEÇÃO III</Rotulo>
+            <Rotulo>Seção III</Rotulo>
             <NomeAgrupador>Autoridade judiciária</NomeAgrupador>
             <Artigo id="art142">
             
@@ -3084,7 +3084,7 @@
           </Secao><Secao id="cap10_sec4">
             
             
-            <Rotulo>SEÇÃO IV</Rotulo>
+            <Rotulo>Seção IV</Rotulo>
             <NomeAgrupador>Ministério Público</NomeAgrupador>
             <Artigo id="art144">
             
@@ -3174,7 +3174,7 @@
           </Secao><Secao id="cap10_sec5">
             
             
-            <Rotulo>SEÇÃO V</Rotulo>
+            <Rotulo>Seção V</Rotulo>
             <NomeAgrupador>Advogado ou Defensor Público</NomeAgrupador>
             <Artigo id="art149">
             
@@ -3198,7 +3198,7 @@
           </Secao><Secao id="cap10_sec6">
             
             
-            <Rotulo>SEÇÃO VI</Rotulo>
+            <Rotulo>Seção VI</Rotulo>
             <NomeAgrupador>Procedimentos</NomeAgrupador>
             <Artigo id="art150">
             
@@ -3276,7 +3276,7 @@
           </Secao><Secao id="cap10_sec7">
             
             
-            <Rotulo>SEÇÃO VII</Rotulo>
+            <Rotulo>Seção VII</Rotulo>
             <NomeAgrupador>Recursos</NomeAgrupador>
             <Artigo id="art155">
             
@@ -3396,7 +3396,7 @@
           </Secao><Secao id="cap10_sec8">
             
             
-            <Rotulo>SEÇÃO VIII</Rotulo>
+            <Rotulo>Seção VIII</Rotulo>
             <NomeAgrupador>Ação de perda, suspensão ou extinção da parentalidade</NomeAgrupador>
             <Artigo id="art162">
             
@@ -3624,7 +3624,7 @@
           </Secao><Secao id="cap10_sec9">
             
             
-            <Rotulo>SEÇÃO IX</Rotulo>
+            <Rotulo>Seção IX</Rotulo>
             <NomeAgrupador>Ação de adoção</NomeAgrupador>
             <Artigo id="art172">
             
@@ -3780,7 +3780,7 @@
           </Secao><Secao id="cap10_sec10">
             
             
-            <Rotulo>SEÇÃO X</Rotulo>
+            <Rotulo>Seção X</Rotulo>
             <NomeAgrupador>Disposições Finais</NomeAgrupador>
             <Artigo id="art180">
             

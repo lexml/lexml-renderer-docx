@@ -420,15 +420,14 @@ final case class Spacing(
         w:before={r(before)}
         w:beforeLines={r(beforeLines)}
         w:line={r(line.map(_.fold(x => x,x => x)))}
-        w:lineRune={lineRule.map(_.value).optAttr}/>
+        w:lineRule={lineRule.map(_.value).optAttr}/>
       )
 }
 
 final case class PPr(
     divId : Option[String] = None,
     ind : Option[Ind] = None,
-    jc : Option[ST_Jc] = None,
-    style : Option[String] = None, //styleId
+    jc : Option[ST_Jc] = None,    
     tabs : Seq[Tab] = Seq(),
     spacing : Option[Spacing] = None,
     widowControl : Boolean = true,
@@ -437,15 +436,13 @@ final case class PPr(
     ) extends XmlComponent {
   lazy val asXML = (
 <w:pPr>
-  {divId.elem(n => <w:divId w:val={n}/>)}
-  {ind.elem(_.asXML)}
-  {jc.elem(x => <w:jc w:val={x.v}/>)}
-  {style.elem(x => <w:pStyle w:val={x}/>)}
+  {pStyle.elem(n => <w:pStyle w:val={n}/>)}
+  {if(widowControl) { <w:widowControl/> } else { NodeSeq.Empty }}
   {cond(!tabs.isEmpty)(<w:tabs>{tabs.eachElem(_.asXML)}</w:tabs>)}
   {spacing.elem(_.asXML)}
-  {if(widowControl) { <w:widowControl/> } else { NodeSeq.Empty }}
-  {if(qFormat) { <w:qFormat/> } else { NodeSeq.Empty }}
-  {pStyle.elem(n => <w:pStyle w:val={n}/>)}
+  {ind.elem(_.asXML)}
+  {jc.elem(x => <w:jc w:val={x.v}/>)}
+  {divId.elem(n => <w:divId w:val={n}/>)}  
 </w:pPr>
   )
 }

@@ -11,47 +11,65 @@ import br.gov.lexml.renderer.docx.docxmodel.builders.implicits.RichOption1
 
 final case class StyleOptField[T](
     val ft : StyleFieldType[T],val value : T)
-     extends XmlComponent {
+     extends XmlComponent with Comparable[Any] {
   this.ensuring(value!=null)
   def asXML = ft.toXML(value)  
+  override def compareTo(x : Any) : Int = x match {
+    case f : StyleOptField[_] => ft.compareTo(f.ft)
+    case _ => -1
+  }
 }
 
-sealed abstract class StyleFieldType[T](val name : String)
-  (implicit ct : ClassTag[T]){
+object StyleOptField {
+  implicit def sofOrdering[T] = new Ordering[StyleOptField[T]] {
+    def compare(x: StyleOptField[T], y: StyleOptField[T]): Int =
+      x.ft.compareTo(y.ft)
+
+  }
+}
+
+sealed abstract class StyleFieldType[T](
+    val name : String,
+    val pos : Int)
+  (implicit ct : ClassTag[T]) extends Comparable[Any] {
   def toXML(value : T) : Elem
+  override def compareTo(x : Any) : Int = x match {
+    case ft : StyleFieldType[_] => pos.compareTo(ft.pos)
+    case _ => -1
+  }
 }
 
-sealed abstract class StyleValFieldType[T](name : String)(implicit ct : ClassTag[T]) 
-  extends StyleFieldType[T](name)(ct) {  
+sealed abstract class StyleValFieldType[T](name : String,pos : Int)(implicit ct : ClassTag[T]) 
+  extends StyleFieldType[T](name,pos)(ct) {  
   override def toXML(value : T) : Elem =
     (<w:elem w:val={value.toString} />
 			).copy(label = name)
 }
 
-sealed abstract class StyleStringFieldType(name : String) 
-  extends StyleValFieldType[String](name) 
+sealed abstract class StyleStringFieldType(name : String,pos : Int) 
+  extends StyleValFieldType[String](name,pos) 
 
-case object S_Name extends StyleStringFieldType("name")
-case object S_BasedOn extends StyleStringFieldType("basedOn")
-case object S_Link extends StyleStringFieldType("link")
-case object S_Next extends StyleStringFieldType("next")
+case object S_BasedOn extends StyleStringFieldType("basedOn",3)
+case object S_Next extends StyleStringFieldType("next",4)
+case object S_Link extends StyleStringFieldType("link",5)
 
-abstract sealed class StyleIntFieldType(name : String)
-  extends StyleValFieldType[Int](name)
+
+abstract sealed class StyleIntFieldType(name : String, pos : Int)
+  extends StyleValFieldType[Int](name,pos)
   
-case object S_UIPriority extends StyleIntFieldType("uiPriority")  
+case object S_UIPriority extends StyleIntFieldType("uiPriority",8)  
 
-sealed abstract class StyleFlagType(name : String) 
-  extends StyleFieldType[Unit](name) {  
+sealed abstract class StyleFlagType(name : String, pos : Int) 
+  extends StyleFieldType[Unit](name,pos) {  
   def toXML(value : Unit) = (<w:x/>).copy(label = name)
 }
 
-case object S_AutoRedefine extends StyleFlagType("autoRedefine")
-case object S_Hidden extends StyleFlagType("hidden")
-case object S_QFormat extends StyleFlagType("qFormat")
-case object S_SemiHidden extends StyleFlagType("semiHiddem")
-case object S_UnhideWhenUsed extends StyleFlagType("unhideWhenUsed")
-case object S_Locked extends StyleFlagType("unhideWhenUsed")
+case object S_AutoRedefine extends StyleFlagType("autoRedefine",6)
+case object S_Hidden extends StyleFlagType("hidden",7)
+case object S_QFormat extends StyleFlagType("qFormat",11)
+case object S_SemiHidden extends StyleFlagType("semiHidden",9)
+case object S_UnhideWhenUsed extends StyleFlagType("unhideWhenUsed",10)
+case object S_Locked extends StyleFlagType("locked",12)
 
 
 
@@ -66,11 +84,13 @@ final case class Style(
     `type` : StyleType,
     id : String,
     aliases : Set[String] = Set(),
-    fields : Map[StyleFieldType[_],StyleOptField[T] forSome { type T }] = Map(),    
+    name : Option[String] = None,
+    fields : Map[StyleFieldType[_],StyleOptField[T] forSome { type T }] = Map(
+        S_QFormat -> StyleOptField(S_QFormat,())),    
     customStyle : Boolean = false,
     default : Boolean = false,
     pPr : Option[PPr] = None,
-    rPr : Option[RPr] = None    
+    rPr : Option[RPr] = None
 ) extends XmlComponent {
   
   def field[Q](ft : StyleFieldType[Q])
@@ -89,10 +109,8 @@ final case class Style(
   def setFlag(st : StyleFlagType) = (v : Boolean) =>
     if(v) { setField(st)(()) } else { clearField(st) } 
       
-  
-  def name = field(S_Name)
-  
-  val setName = setField(S_Name)
+      
+  def setName(n : String) = copy(name=Some(n))
   
   def basedOn = field(S_BasedOn)
   
@@ -124,17 +142,20 @@ final case class Style(
   
   def unhideWhenUsed = flag(S_UnhideWhenUsed)
   def setUnhideWhenUsed = setFlag(S_UnhideWhenUsed)
-  
+  import StyleOptField.sofOrdering
   def asXML = (      
       <w:style w:styleId={id} w:type={`type`.value}
       	w:default={default.onTrueOrNull("true")}
       	w:customStyle={customStyle.onTrueOrNull("true")}>
+			{ name.elem(n =>
+			    <w:name w:val={n}/>)
+			}
 			{
 			  if(aliases.isEmpty) { NodeSeq.Empty } else {			
 			    <w:aliases w:val={aliases.mkString(",")}/>
 			  }
 			}			
-			{ fields.values.to[Seq].map(_.asXML) }
+			{ fields.values.to[IndexedSeq].sortBy(_.ft.pos).map(_.asXML) }
 			{ pPr.onSome(_.asXML) }
 			{ rPr.onSome(_.asXML) }
 			</w:style>
@@ -176,9 +197,9 @@ final case class DocDefaults(
     pPr : Option[PPr] = None,
     rPr : Option[RPr] = None) extends XmlComponent {
   def asXML = (
-      <w:docDefaults>
-			{pPr.onSome(x => <w:pPrDefault>{x.asXML}</w:pPrDefault>)}
+      <w:docDefaults>			
 			{rPr.onSome(x => <w:rPrDefault>{x.asXML}</w:rPrDefault>)}
+			{pPr.onSome(x => <w:pPrDefault>{x.asXML}</w:pPrDefault>)}
 			</w:docDefaults>
       )
 }
@@ -293,8 +314,9 @@ object DefaultStyles {
                 Spacing(
                   before = Some(Pts20(12)),
                   after = Some(Pts20(12))
-                )
-              )
+                )               
+              ),
+              ind = Some(Ind(firstLine=Pts20(0)))
            )       
          )
           
@@ -322,7 +344,7 @@ object DefaultStyles {
       link = "EmentaCaracter")(  
     PPr(       
         pStyle = Some(defaultParStyle.id),
-        ind = Some(Ind(start=Pts20(198.45))),
+        ind = Some(Ind(start=Pts20(198.45),firstLine=Pts20(0))), 
         spacing = Some(Spacing(
             after = Some(Pts20(12)),
             line = Some(Left(Pts20(12))),
@@ -352,7 +374,8 @@ object DefaultStyles {
          spacing = Some(Spacing(
              beforeLines = Some(Lines100(2.0)),
              afterLines=Some(Lines100(2.0)))
-         )
+         ),
+         ind = Some(Ind(firstLine=Pts20(0)))
     ))
   
   val preambuloRPrStyle = makeRPrStyle(
@@ -376,7 +399,8 @@ object DefaultStyles {
       "NomeAgrupadorParagrafo","Nome de Agrupador (parágrafo)",
       link="NomeAgrupadorCaracter")(PPr(
           pStyle = Some(defaultParStyle.id),
-          jc = Some(JC_Center)
+          jc = Some(JC_Center),
+          ind = Some(Ind(firstLine=Pts20(0)))
       ))
    
   
@@ -400,7 +424,8 @@ object DefaultStyles {
       "RotuloAgrupadorParagrafo","Rótulo de Agrupador (parágrafo)",
       link="RotuloAgrupadorCaracter")(PPr(
           pStyle = Some(defaultParStyle.id),
-          jc = Some(JC_Center)
+          jc = Some(JC_Center),
+          ind = Some(Ind(firstLine=Pts20(0)))
       ))
       
   val rotuloAgrupadorRPrStyle = makeRPrStyle(
@@ -420,6 +445,12 @@ object DefaultStyles {
   
   //Secao e subsecao
   
+  val secaoSubsecaoRotuloRPrStyle = makeRPrStyle(
+      "SecaoSubsecaoRotuloCaracter","Rótulo de Seção e Subseção (caractere)")(RPr( 
+      rStyle = Some(rotuloAgrupadorRPrStyle.id),      
+      capsMode = Some(CM_Normal)
+  ))
+  
   val secaoSubsecaoRPrStyle = makeRPrStyle(
       "SecaoSubsecaoCaracter","Seção e Subseção (caractere)")(RPr( 
       rStyle = Some(defaultCharStyle.id),
@@ -429,6 +460,7 @@ object DefaultStyles {
   ))
   
   val rprSecaoSubsecao = rPrRef(secaoSubsecaoRPrStyle.id)
+  val rprRotuloSecaoSubsecao = rPrRef(secaoSubsecaoRotuloRPrStyle.id)
   
   //Dispositivos
   
@@ -461,7 +493,9 @@ object DefaultStyles {
        color = Some(RGB(0.2,0.2,0.2)
    )))
   
-  val rprLinkRemissao = rPrRef(linkRemissaoRPrStyle.id)
+  val rprLinkRemissao = RPr(       
+       color = Some(RGB(0.2,0.2,0.2)
+   ))
         
   val styles = Styles(
       docDefaults = Seq(docDefault),

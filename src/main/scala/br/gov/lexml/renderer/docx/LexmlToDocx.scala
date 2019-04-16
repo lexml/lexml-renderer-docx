@@ -41,14 +41,30 @@ class LexmlToDocx(config : LexmlToDocxConfig) {
   private lazy val consts = Constants.default
   private lazy val renderer = new PackageRenderer(config.referenceDocx)
   
-  def convert(source : Array[Byte]) : Array[Byte] = {
+  
+  def addOriginal(old : Option[Array[Byte]]) : Option[Array[Byte]] = {
+    import scala.xml._
+    val oldXml = old.map(x => XML.loadString(new String(x,"utf-8"))).
+      getOrElse(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>)
+    val newXml = oldXml.copy(
+        child = oldXml.child :+ (<Relationship Id="OriginalLexMLDocument" Type="http://www.lexml.gov.br/doc"
+                              Target="original.xml"/>)
+                              )
+    Some(PackageRenderer.xmlToByteArray(newXml))
+  }
+    
+  def convert(source : Array[Byte], extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {
     val sourceMD5 = DigestUtils.md5Hex(source)
     logger.info(s"Parse do documento LexML: md5 = ${sourceMD5}")
     val xml = LexmlSchema(source)
     logger.info("Conversão para objetos de domínio")
     val doc = XmlConverter.scalaxbToModel(xml)
     logger.info("Renderização para DOCX")
-    val res = renderer.render(doc)
+    val extraReplace1 = Seq[(String,PackageRenderer.ReplaceFunc)](
+           ("original.xml" -> ((_ : Option[Array[Byte]]) => Some(source))),
+           ("_rels/.rels" -> addOriginal)
+              )  ++ extraReplace
+    val res = renderer.render(doc,extraReplace1)
     val resMD5 = DigestUtils.md5Hex(res)
     logger.info(s"Resultado len=${res.length}, md5 = ${resMD5}")
     res  
