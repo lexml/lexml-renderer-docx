@@ -11,11 +11,12 @@ import br.gov.lexml.doc.xml.XmlConverter
 import br.gov.lexml.schema.scala.LexmlSchema
 import org.apache.commons.codec.digest.DigestUtils
 
-class LexmlToDocxConfig(
-    val referenceDocx : Array[Byte] = LexmlToDocxConfig.defaultReferenceDocx.getOrElse(sys.error("É preciso informar um documento de referencia")),
-    val constants : Constants = Constants.default
+final case class LexmlToDocxConfig(
+    val referenceDocx : Array[Byte],
+    val constants : Constants
     )
 
+    
 object LexmlToDocxConfig {
   protected [LexmlToDocxConfig] val logger = LoggerFactory.getLogger(classOf[LexmlToDocxConfig])
   private lazy val defaultReferenceDocx : Option[Array[Byte]] = {
@@ -29,6 +30,10 @@ object LexmlToDocxConfig {
         None
     }
   }
+  
+  def apply() : LexmlToDocxConfig = LexmlToDocxConfig(
+      referenceDocx = defaultReferenceDocx.getOrElse(sys.error("É preciso informar um documento de referencia")),
+      constants = Constants.default)
 }
 
 object LexmlToDocx {
@@ -53,7 +58,7 @@ class LexmlToDocx(config : LexmlToDocxConfig) {
     Some(PackageRenderer.xmlToByteArray(newXml))
   }
     
-  def convert(source : Array[Byte], extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {
+  def convert(source : Array[Byte], extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)]) : Array[Byte] = {
     val sourceMD5 = DigestUtils.md5Hex(source)
     logger.info(s"Parse do documento LexML: md5 = ${sourceMD5}")
     val xml = LexmlSchema(source)
@@ -69,4 +74,9 @@ class LexmlToDocx(config : LexmlToDocxConfig) {
     logger.info(s"Resultado len=${res.length}, md5 = ${resMD5}")
     res  
   }
+  
+  def convert(source : Array[Byte]) : Array[Byte] = 
+    convert(source = source, extraReplace = Seq())
+  
+  
 }

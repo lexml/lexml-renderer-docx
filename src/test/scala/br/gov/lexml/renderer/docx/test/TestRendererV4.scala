@@ -15,7 +15,7 @@ object TestRendererV4  extends App {
   import java.io.File
   import scala.collection.JavaConverters._
   
-  val lexmlToDocxConfig = new LexmlToDocxConfig()
+  val lexmlToDocxConfig = LexmlToDocxConfig()
 
   val lexmlToDocx = new LexmlToDocx(lexmlToDocxConfig)
         
