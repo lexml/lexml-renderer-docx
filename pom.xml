@@ -115,8 +115,7 @@
 					</archive>
 				</configuration>
 			</plugin>
-			<plugin>
-				<!--groupId>org.dstovall</groupId --> <!-- not available on the central -->
+			<!-- <plugin>			
 				<groupId>com.jolira</groupId>
 				<artifactId>onejar-maven-plugin</artifactId>
 				<version>1.4.4</version>
@@ -125,9 +124,7 @@
 						<phase>package</phase>
 						<configuration>
 							<mainClass>br.gov.lexml.parser.pl.fe.FECmdLine</mainClass>
-							<attachToBuild>true</attachToBuild>
-							<!-- https://code.google.com/p/onejar-maven-plugin/issues/detail?id=8 -->
-							<!--classifier>onejar</classifier -->
+							<attachToBuild>true</attachToBuild>							
 							<filename>${project.build.finalName}-onejar.${project.packaging}</filename>
 							<classifier>one-jar</classifier>
 						</configuration>
@@ -136,7 +133,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 
 		</plugins>
 		<resources>
@@ -144,43 +141,7 @@
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
 			</resource>
-		</resources>
-		<pluginManagement>
-			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											com.google.code.maven-svn-revision-number-plugin
-										</groupId>
-										<artifactId>
-											maven-svn-revision-number-plugin
-										</artifactId>
-										<versionRange>
-											[1.6,)
-										</versionRange>
-										<goals>
-											<goal>revision</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore />
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
+		</resources>		
 	</build>
 
 	<dependencies>
@@ -205,7 +166,7 @@
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-schema-scala</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
