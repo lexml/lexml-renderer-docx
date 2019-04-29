@@ -622,10 +622,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
           case _ => (State.pure(()),false)
       }) : (RunRenderer[Unit],Boolean)
       _ <- a.titulo.ifDef(t => parM(tituloArtigoPPr)(withStyleRunRenderer(tituloArtigoRPr)(inlineSeq(t.inlineSeq))))
-      _ <- parM(contentPPr) { for {        
-        _ <-rotuloArt 
-        _ <- conteudo            
-        } yield (()) }
+      _ <- parM(contentPPr) { rotuloArt.flatMap(_ => conteudo.flatMap(_ => State.pure(()))) }
       _ <- a.containers.headOption.ifDef(x => lxContainer(x,skipFirst))
       _ <- mapM_(a.containers.tail){x => lxContainer(x,false) }    
     } yield (()))
@@ -680,7 +677,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       val last1 = middle1.last
       val last2 = if (fechaAspas) { last1.insertLast(fechaAspasRun) } else { last1 }
       val last3 = notaAlteracao.map { x =>
-        val r = R(contents = Seq(T(s" (${x})",preserveSpace=true)))
+        val r = R(contents = Seq(T(s" (!${x.trim}!)",preserveSpace=true)))
         last2.insertLast(r)
       }.getOrElse(last2)
       val middle2 = if(fechaAspas) { middle1.init :+ last3 } else { middle1 }      

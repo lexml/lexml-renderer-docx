@@ -22,9 +22,15 @@ object implicits {
   }
   
   implicit class MainDocBuilderMonadStmtOps[T](d : MainDocBuilderMonadStmt[T]) {
+    import br.gov.lexml.renderer.docx.docxmodel.proc.trimP
     def makeMainDoc(v0 : T) : Eval[(DocxMainDocument,T)] = {
       d.run(MainDocBuilderState(value = v0)) map { case (rs,_) =>
-          (DocxMainDocument(contents = rs.contents),rs.value)          
+        val contents = rs.contents
+        val contents1 =  contents.collect {
+          case p : P => trimP(p)
+          case x => x
+        }
+          (DocxMainDocument(contents = contents1),rs.value)
       }
     }
   }
@@ -39,7 +45,7 @@ object implicits {
         case None => State { (x : A) => (x,()) }
         case Some(x) => State { st =>
           val (st1,_) = f(x).run(st).value
-          (st1,())
+          (st1 : A,())
         }
       }
     }

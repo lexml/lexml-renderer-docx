@@ -4,6 +4,7 @@ import scala.xml._
 import java.io._
 import org.apache.commons.io.IOUtils
 
+
 object XmlUtils {
   def xmlToByteArray(e : Elem) = {
     val w = new StringWriter()
@@ -15,7 +16,7 @@ object XmlUtils {
 
 
 final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq())
-    extends XmlComponent with DocxTextComponentContainer[DocxMainDocument] {
+    extends XmlComponent with DocxTextComponentContainer[DocxMainDocument]  {
   override def asXML : Elem = (
 <w:document xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" mc:Ignorable="w14 wp14">
   <w:body>
@@ -59,6 +60,8 @@ final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) exte
   
   def flatMap(f : ParElement => Seq[ParElement]) : P =
     copy(runs = runs.flatMap(f))
+
+  override val parElements = runs
 }
 
 sealed trait ParElement extends Product with XmlComponent {
@@ -67,6 +70,7 @@ sealed trait ParElement extends Product with XmlComponent {
 
 trait ParElementContainer[+T] {
   def flatMap(f : ParElement => Seq[ParElement]) : T
+  def parElements : Seq[ParElement]
 }
 
 abstract sealed class CapsMode extends Product {
@@ -216,6 +220,7 @@ abstract sealed class RunContent extends Product with XmlComponent {
 
 trait RunContentContainer[+T] {
   def flatMap(f : RunContent => Seq[RunContent]) : T
+  def contents : Seq[RunContent]
 }
 
 case object Br extends RunContent {
@@ -237,6 +242,8 @@ final case class Del(id : String, content : Seq[ParElement] = Seq(), author : Op
       )
    def flatMap(f : ParElement => Seq[ParElement]) : Del =
     copy(content = content.flatMap(f))
+
+  override val parElements = content
 }
 
 final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Option[String] = None, date : Option[java.time.ZonedDateTime] = None
@@ -248,6 +255,7 @@ final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Op
       )
   def flatMap(f : ParElement => Seq[ParElement]) : Ins =
     copy(content = content.flatMap(f))
+  override val parElements = content
 }
 
 final case class Hyperlink(
@@ -263,6 +271,7 @@ final case class Hyperlink(
       )
   def flatMap(f : ParElement => Seq[ParElement]) : Hyperlink =
     copy(content = content.flatMap(f))
+  override val parElements = content
 }
 
 case object NoBreakHyphen extends RunContent {
@@ -275,6 +284,7 @@ case class Sym(font : String, char : String) extends RunContent {
 
 case class T(text : String, preserveSpace : Boolean = false) extends RunContent {
   lazy val asXML = <w:t xml:space={if(preserveSpace) { "preserve" } else {  null }}>{text}</w:t>
+
   override val isEmpty = text.trim.size == 0
 }
 

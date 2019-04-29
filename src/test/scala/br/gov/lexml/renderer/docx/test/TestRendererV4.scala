@@ -19,7 +19,7 @@ object TestRendererV4  extends App {
 
   val lexmlToDocx = new LexmlToDocx(lexmlToDocxConfig)
         
-  val sampleDir = new File("./src/test/samples")
+  val sampleDir = new File("/tmp/test/samples")
   println(s"${sampleDir.isDirectory()}, ${sampleDir.exists()}")
   
   val files1 = Option(sampleDir.listFiles()).getOrElse(Array()).filterNot(_ == null)  
@@ -32,7 +32,7 @@ object TestRendererV4  extends App {
       
   println(s"files.size = ${files.size}")
  
-  val destDir = new File("/tmp/results")
+  val destDir = new File("/tmp/test/results")
   try { destDir.mkdirs() } catch { case _ : Exception => }
   
   var count : Int = 1
