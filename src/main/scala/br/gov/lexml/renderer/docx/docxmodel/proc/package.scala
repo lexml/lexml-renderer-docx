@@ -14,63 +14,31 @@ package object proc {
 
 
 
-val pecTexts : ParElementContainer[_] => Seq[T] =  attr { p : ParElementContainer[_] =>
-  val res = p.parElements.flatMap(peTexts)
-  println("pecTexts: p = " + p + ", res: " + res)
-  res
-}
+val pecTexts : ParElementContainer[_] => Seq[T] =  attr { _.parElements.flatMap(peTexts) }  
 
-val rccTexts : RunContentContainer[_] => Seq[T] = attr { c : RunContentContainer[_] =>
-  val res = c.contents.flatMap(rcTexts)
-  println("rccTexts:  c = " + c + ", res = " + res)
-  res
-}
+val rccTexts : RunContentContainer[_] => Seq[T] = attr { _.contents.flatMap(rcTexts) }  
 
 val rcTexts : RunContent => Seq[T] = attr {
-  case t : T => {
-    println("Found a T: " + t)
-    Seq(t)
-  }
-  case pec : ParElementContainer[_] => {
-    println("Found a container: " + pec.parElements)
-    val res = pecTexts(pec)
-    println("   res = " + res)
-    res
-  }
-  case rcc : RunContentContainer[_] => {
-    println("Found a run container: " + rcc.contents)
-    val res = rccTexts(rcc)
-    res
-  }
-  case x => {
-    println("Found something else: " + x)
-    Seq()
-  }
+  case t : T => Seq(t)
+  
+  case pec : ParElementContainer[_] => pecTexts(pec)
+    
+  case rcc : RunContentContainer[_] => rccTexts(rcc)
+
+  case x => Seq()  
 }
 
 val peTexts : ParElement => Seq[T] = attr {
-  case t : T => {
-    println("Found a T: " + t)
-    Seq(t)
-  }
-  case pec : ParElementContainer[_] => {
-    println("Found a container: " + pec.parElements)
-    val res = pecTexts(pec)
-    println("   res = " + res)
-    res
-  }
-  case rcc : RunContentContainer[_] => {
-    println("Found a run container: " + rcc.contents)
-    val res = rccTexts(rcc)
-    res
-  }
-  case x => {
-    println("Found something else: " + x)
-    Seq()
-  }
+  case t : T => Seq(t)
+  
+  case pec : ParElementContainer[_] => pecTexts(pec)
+  
+  case rcc : RunContentContainer[_] => rccTexts(rcc)
+
+  case x => Seq()  
 }
 
-private val trimRe = """(^\s+)|(\s+$)|((?<=\S\s)\s+(?=\S))""".r
+private val trimRe = """(^\s+)|(\s+$)|((?<=\S\s)\s+(?=\S))|(\s+(?=[,;.!?]))|((?<=\()\s+|\s+(?=\)))""".r
 
 protected[proc] class WrapEq[A](x : A) {
   private val _hashCode = System.identityHashCode(x)
@@ -87,7 +55,6 @@ def escape(raw: String): String = {
 }
 
 def trimP(p : P) : P = {
-  println("Trimming: " + p)
   val texts = pecTexts(p)
   val sb = new StringBuilder()
   import scala.collection.SortedMap
@@ -99,7 +66,6 @@ def trimP(p : P) : P = {
       (npos,nm)
   }
   val text = sb.toString
-  println("text: " + escape(text))
   val matches: ArrayStack[(Int,Int)] =
     trimRe.findAllMatchIn(text).to[ArrayStack].
       map(m => (m.start,m.end - m.start))
@@ -117,23 +83,14 @@ def trimP(p : P) : P = {
   }
   val cuts = cb.result().groupBy(_._1).mapValues(_.map(x => (x._2,x._3)))
     .map { case (k,v) => (new WrapEq(k),v)}
-  println("cuts: " + cuts)
   val rewriteRule = rule[Any] {
     case t : T if cuts.contains(new WrapEq(t)) =>
-      println("Cutting: " + escape(t.text))
-      val r = T(text = cutString(t.text,cuts(new WrapEq(t)) : _*))
-      println("Result: " + escape(r.text))
-      r
-    case x => {
-      println("rewriteRule: ignoring: " + x)
-      x
-    }
+      t.copy(text = cutString(t.text,cuts(new WrapEq(t)) : _*))
+    case x => x    
   }
 
   val strategy = bottomup(rewriteRule)
-  val res = rewrite(strategy)(p)
-  println("   Result: " + res)
-  res
+  rewrite(strategy)(p)  
 }
 
 def cutString(txt : String, cuts : (Int,Int)*) : String = {

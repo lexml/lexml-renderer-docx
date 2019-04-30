@@ -272,8 +272,10 @@ object DefaultStyles {
       szCs = Some(20)
       )
   
+  val defInd = Ind(firstLine=Pts20(709.0/20.0))    
+      
   val defaultPPr = PPr(      
-      ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+      ind = Some(defInd)
       ) ;
               
   val docDefault = DocDefaults(
@@ -286,7 +288,7 @@ object DefaultStyles {
                       spacing = Some(Spacing(after=Some(Pts20(6)))),                      
                       tabs = omissisTabs,
                       jc = Some(JC_Both),
-                      ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+                      ind = Some(defInd)
                       ))   
   
   val indentAlteracao1 = Ind(
@@ -468,7 +470,7 @@ object DefaultStyles {
      "ConteudoDispositivoParagrafo","Conteúdo de Dispositivo (caractere)")(
       PPr(
         pStyle = Some(defaultParStyle.id),
-        ind = Some(Ind(firstLine=Pts20(567.0/20.0)))
+        ind = Some(defInd)
       ))
   
   val pprConteudoDispositivo = pPrRef(conteudoDispositivoPPrStyle.id) 

@@ -677,7 +677,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       val last1 = middle1.last
       val last2 = if (fechaAspas) { last1.insertLast(fechaAspasRun) } else { last1 }
       val last3 = notaAlteracao.map { x =>
-        val r = R(contents = Seq(T(s" (!${x.trim}!)",preserveSpace=true)))
+        val r = R(contents = Seq(T(s" (${x.trim})",preserveSpace=true)))
         last2.insertLast(r)
       }.getOrElse(last2)
       val middle2 = if(fechaAspas) { middle1.init :+ last3 } else { middle1 }      
