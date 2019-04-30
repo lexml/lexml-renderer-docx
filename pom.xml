@@ -165,13 +165,8 @@
 		</dependency>
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
-			<artifactId>lexml-schema-scala</artifactId>
-			<version>1.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-doc-model</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.2</version>
 		</dependency>
 
 		<dependency>
