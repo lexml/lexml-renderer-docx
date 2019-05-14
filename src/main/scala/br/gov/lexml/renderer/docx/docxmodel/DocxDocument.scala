@@ -68,7 +68,7 @@ sealed trait ParElement extends Product with XmlComponent {
   def isEmpty : Boolean = false
 }
 
-trait ParElementContainer[+T] {
+trait ParElementContainer[T <: ParElementContainer[T]] {
   def flatMap(f : ParElement => Seq[ParElement]) : T
   def parElements : Seq[ParElement]
 }

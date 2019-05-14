@@ -14,6 +14,7 @@ import br.gov.lexml.doc.xml.XmlConverter
 import br.gov.lexml.schema.scala.LexmlSchema
 import org.apache.commons.io.IOUtils
 import org.slf4j._
+import scala.util.matching.Regex
 
 final case class HrefData(href : URI, id : String, tooltip : Option[String] = None, anchor : Option[String] = None,
     rPr : Option[RPr] = None)
@@ -101,8 +102,10 @@ final case class Constants(
    hrefIdPrefix : String = "HrefId",
    pprStyles : Map[RenderElement,PPr] = Map(),
    rprStyles : Map[RenderElement,RPr] = Map(),   
-   indentAlteracao : Ind = Ind(start = Pts20(15), hanging = Pts20(15)),
-   iniciaisMaiusculas : Set[RenderElement] = Set()
+   indentAlteracao : Ind = Ind(),
+   spacingAlteracao : Spacing = Spacing(),
+   iniciaisMaiusculas : Set[RenderElement] = Set(),
+   expressoesEmBold : Set[String] = Set()
 )
 
 object Constants {
@@ -135,10 +138,21 @@ object Constants {
        RE_TituloDispositivo(TDP_Artigo) -> DefaultStyles.rprTituloArtigo 
        ),                        
    indentAlteracao = DefaultStyles.indentAlteracao1,
+   spacingAlteracao = DefaultStyles.spacingAlteracao1,
    iniciaisMaiusculas = Set(
        RE_NomeAgrupador(TAP_Secao),
        RE_NomeAgrupador(TAP_Subsecao)
-       )
+       ),
+   expressoesEmBold = Set[String](
+      "caput",
+      "in fine", "quorum",
+      "libor", "price", "front-end fee", 
+      "transaction fee", 
+      "variable spread loan", 
+      "spread"       
+      ).map(x => "\\b" + x + "\\b") ++
+      Set("^O PRESIDENTE DA REP[UÚ]BLICA") ++
+      Set("^O PRESIDENTE DO CONGRESSO")         
   )
 } 
 
@@ -368,7 +382,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   
   def inSuperscript[T](rr : RunRenderer[T]) : RunRenderer[T] = 
     runWithRPrChange(_.copy(vertAlign = Some(VA_Superscript)))(rr)
-    
+      
   def insertion(x : GenHtmlInlineElement) : RunRenderer[Unit] =  
     modifyPState(_.addUnsupported("insertion(GenHtmlInlineElement)",x))
     
@@ -604,25 +618,26 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   }
   
   def artigo(a : Artigo) : ParRenderer[Unit] = {
-    this.ensuring(a.tipoDispositivo != null)
+    this.ensuring(a.tipoDispositivo != null)    
+    val rotuloArt = a.rotulo.ifDef(rotuloArtigo)     
+    val selectFirst = ({
+      case t : TextoDispositivo => (inlineSeq(t.inlineSeqs.head.inlineSeq),true)  
+      case OmissisSimples => (omissis,true)        
+      } : PartialFunction[ConteudoDispositivo,(RunRenderer[Unit],Boolean)])
+    val (conteudo,skipFirst,contFechaAspas,contNotaAlteracao) = (a.containers.head match {      
+          case d : DispositivoPredefNA if d.tipoDispositivo == TDP_Caput => 
+            val (ct,skip) = d.conteudo.collect(selectFirst).getOrElse((State.pure(()),false)) : (RunRenderer[Unit],Boolean)
+            (ct,skip,d.fechaAspas,d.notaAlteracao)
+          case _ => (State.pure(()),false,false,None)
+      }) : (RunRenderer[Unit],Boolean,Boolean,Option[String])    
     aspasP(a.abreAspas,a.fechaAspas,a.notaAlteracao)(for {      
       rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(a.tipoDispositivo))
       contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(a.tipoDispositivo))
       contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(a.tipoDispositivo))
       tituloArtigoPPr <- inspectMDState(_.tituloStylePPrForDispositivo(a.tipoDispositivo))
       tituloArtigoRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(a.tipoDispositivo))      
-      rotuloArt = a.rotulo.ifDef(rotuloArtigo)     
-      selectFirst = ({
-        case t : TextoDispositivo => (inlineSeq(t.inlineSeqs.head.inlineSeq),true)  
-        case OmissisSimples => (omissis,true)        
-      } : PartialFunction[ConteudoDispositivo,(RunRenderer[Unit],Boolean)])
-      (conteudo,skipFirst) = (a.containers.head match {      
-          case d : DispositivoPredefNA if d.tipoDispositivo == TDP_Caput => 
-            d.conteudo.collect(selectFirst).getOrElse(State.pure(()),false)
-          case _ => (State.pure(()),false)
-      }) : (RunRenderer[Unit],Boolean)
       _ <- a.titulo.ifDef(t => parM(tituloArtigoPPr)(withStyleRunRenderer(tituloArtigoRPr)(inlineSeq(t.inlineSeq))))
-      _ <- parM(contentPPr) { rotuloArt.flatMap(_ => conteudo.flatMap(_ => State.pure(()))) }
+      _ <- aspasP(false,contFechaAspas,contNotaAlteracao) { parM(contentPPr) { rotuloArt.flatMap(_ => conteudo.flatMap(_ => State.pure(()))) } }
       _ <- a.containers.headOption.ifDef(x => lxContainer(x,skipFirst))
       _ <- mapM_(a.containers.tail){x => lxContainer(x,false) }    
     } yield (()))
@@ -707,38 +722,61 @@ final case class MainDocRendererResult(
     hrefData : Seq[HrefData],
     unsupportedCases : Seq[(String,Any)])
 
-class WordMarker(expressions : Set[String]) {    
-  import br.gov.lexml.renderer.docx.docxmodel._
-  val exprReTxt = """(.*)\b(""" + expressions.mkString("|") + """)\b(.*)"""
-  val exprRe = exprReTxt.r
+class WordMarker(regex : String, change : RPr => RPr) {    
+  import br.gov.lexml.renderer.docx.docxmodel._  
+  val exprRe = regex.r  
       
   def fRunContentContainer(x : RunContent) : Seq[RunContent] = x match {
     case x : ParElementContainer[RunContent] => Seq(x.flatMap(fParElementContainer))
     case x : RunContentContainer[RunContent] => Seq(x.flatMap(fRunContentContainer))   
     case x => Seq(x)
   }
-      
+  
+    
   def fParElementContainer(x : ParElement) : Seq[ParElement]  = x match {
     case x : R => {
-      val l : Seq[Either[(String,String,String),RunContent]] = x.contents.collect {
-        case t : T => t.text match {
-          case exprRe(head,expr,tail) =>
-            Left((head,expr,tail))
-          case _ => Right(t)          
-        }
+      val l : Seq[Either[(T,Seq[(Int,Int)]),RunContent]] = x.contents.collect {
+        case t : T =>
+          val matches = exprRe.findAllMatchIn(t.text).to[Seq].map { m =>
+              (m.start,m.end) }
+          if(matches.isEmpty) { Right(t) }
+          else { Left(t,matches) }              
         case t => Right(t)
       }
-      val (r1,l1) = l.foldLeft((Seq[RunContent](),Seq[ParElement]())) { 
-        case ((rcl,pel),Right(t)) => (rcl :+ t,pel)
-        case ((rcl,pel),Left((head,expr,tail))) => {
-          val run1 = x.copy(contents = rcl :+ T(head,preserveSpace=true))
-          val run2 = x.copy(rPr = Some(x.rPr.getOrElse(RPr()).copy(italics = Some(true))),contents = Seq(T(expr)))
-          (Seq(T(tail,preserveSpace=true)),pel :+ run1 :+ run2)
+      val pl : Seq[ParElement] = l.flatMap { 
+        case Right(t) => Seq(x.copy(contents = Seq(t)))
+        case Left((t,matches)) => {          
+          val b = Seq.newBuilder[R]
+          var last : Int = 0
+          lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))          
+          def passthrough(start : Int) {
+            if(start > last) {              
+              val t1 = t.text.substring(last,start)
+              val tb = Seq.newBuilder[T]
+              val tl = if(t1.charAt(0).isWhitespace && last > 0) {
+                tb += T(" ",preserveSpace=true)                
+              }
+              tb += T(t1.trim)             
+              if(start < t.text.length && t1.last.isWhitespace) {
+                tb += T(" ",preserveSpace=true)
+              }
+              b += x.copy(contents = tb.result())
+            }
+          }
+          for { 
+            (start,end) <- matches
+          } {
+            passthrough(start)            
+            b += R(rPr = newRPr,contents = Seq(T(t.text.substring(start,end))))
+            last = end
+          }
+          passthrough(t.text.length)
+          b.result()          
         }
       }
-      val l2 = if(r1.isEmpty) { l1 } else { l1 :+ x.copy(contents = r1) }
-      l2
-    }      
+      pl
+    }
+    case x : ParElementContainer[ParElement] => Seq(x.flatMap(fParElementContainer))
     case x : RunContentContainer[ParElement] => Seq(x.flatMap(fRunContentContainer))
     case x => Seq(x)
   }
@@ -750,20 +788,26 @@ class WordMarker(expressions : Set[String]) {
   def apply(x : DocxMainDocument) : DocxMainDocument = 
     x.flatMap(fDocxTextComponent)
 }
+
+object WordMarker {  
+  def makeOr(exprs : Seq[String]) = exprs.map(x => "(?:" + x + ")").mkString("|")
     
+  val AddItalics : RPr => RPr = _.copy(italics = Some(true))
+  val AddBold : RPr => RPr = _.copy(bold = Some(true))                 
+}
+
 final case class MainDocRenderer(constants : Constants = Constants()) {  
-  val expressoesEmItalico = Set(
-      "caput", "in fine", "quorum",
-      "libor", "price", "front-end fee", 
-      "transaction fee", 
-      "variable spread loan", 
-      "spread"       
-      )
+  
   def render(doc : LexmlDocument) : MainDocRendererResult = {    
     val st0 = RendererState(constants = constants) 
     val (d,st1) = Renderers.lexmlDocument(doc).makeMainDoc(st0).value
-    val d1 = d.copy(d.contents.filterNot(_.isEmpty))   
-    val d2 = new WordMarker(expressoesEmItalico)(d1)
+    val d1 = d.copy(d.contents.filterNot(_.isEmpty))
+    val reformatRules : Seq[(String,RPr => RPr)] = Seq(
+      WordMarker.makeOr(constants.expressoesEmBold.to[Seq]) -> WordMarker.AddBold
+      )
+    val d2 = reformatRules.foldLeft(d1) { case (d,(regex,change)) =>
+      new WordMarker(regex,change)(d)
+    }       
     MainDocRendererResult(
         doc=d2,
         hrefData = st1.hrefToHrefData.values.to[Seq],

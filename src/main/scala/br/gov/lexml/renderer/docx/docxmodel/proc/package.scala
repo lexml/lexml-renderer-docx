@@ -38,7 +38,9 @@ val peTexts : ParElement => Seq[T] = attr {
   case x => Seq()  
 }
 
-private val trimRe = """(^\s+)|(\s+$)|((?<=\S\s)\s+(?=\S))|(\s+(?=[,;.!?]))|((?<=\()\s+|\s+(?=\)))""".r
+private val trimRe = """(^\s+)|(\s+$)|((?<=\S\s)\s+(?=\S))|(\s+(?=[,;.!?]))|((?<=\()\s+|\s+(?=\)))|((?<=“)\s+)|(\s+(?=”))""".r
+
+  
 
 protected[proc] class WrapEq[A](x : A) {
   private val _hashCode = System.identityHashCode(x)

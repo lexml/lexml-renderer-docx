@@ -215,6 +215,12 @@ final case class Styles(
 			{styles.map(_.asXML)}
 			</w:styles>
       )
+  def completeWith(base : Styles) : Styles = {
+    val alreadyDefined = styles.flatMap(_.name).to[Set]
+    val missing = base.styles.filter(s => s.name.isDefined && !alreadyDefined.contains(s.name.get))
+    copy(styles = styles ++ missing)
+  }
+    
 }
 
 object DefaultStyles {
@@ -272,7 +278,7 @@ object DefaultStyles {
       szCs = Some(20)
       )
   
-  val defInd = Ind(firstLine=Pts20(709.0/20.0))    
+  val defInd = Ind(firstLine=Pts20(567.0/20.0))    
       
   val defaultPPr = PPr(      
       ind = Some(defInd)
@@ -291,8 +297,10 @@ object DefaultStyles {
                       ind = Some(defInd)
                       ))   
   
-  val indentAlteracao1 = Ind(
-      start=Pts20(40))                      
+  val indentAlteracao1 = Ind(start = Pts20(1134.0/20), firstLine = Pts20(284.0/20))
+  val spacingAlteracao1 = Spacing(line = Some(Left(Pts20(12.0))), lineRule=Some(SLR_Auto))
+
+      
                       
   val defaultCharStyle =
     makeRPrStyle("DefaultCharacter","Default Character",
@@ -374,10 +382,12 @@ object DefaultStyles {
     PPr(  
          pStyle = Some(defaultParStyle.id),
          spacing = Some(Spacing(
-             beforeLines = Some(Lines100(2.0)),
-             afterLines=Some(Lines100(2.0)))
-         ),
-         ind = Some(Ind(firstLine=Pts20(0)))
+             before = Some(Pts20(0)),
+             after=Some(Pts20(6.0)),
+             line=Some(Left(Pts20(12.0))),
+             lineRule=Some(SLR_AtLeast)
+             )
+         )
     ))
   
   val preambuloRPrStyle = makeRPrStyle(
