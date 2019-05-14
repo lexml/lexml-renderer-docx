@@ -278,7 +278,7 @@ object DefaultStyles {
       szCs = Some(20)
       )
   
-  val defInd = Ind(firstLine=Pts20(567.0/20.0))    
+  val defInd = Ind(firstLine=Pts20(708.0/20.0))    
       
   val defaultPPr = PPr(      
       ind = Some(defInd)
