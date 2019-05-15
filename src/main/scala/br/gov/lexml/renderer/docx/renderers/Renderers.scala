@@ -903,7 +903,7 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     val mainDoc = res.doc.asXML    
     val replaceFuncs : Seq[(String,ReplaceFunc)] = Seq(
         "word/document.xml" -> subst(xmlToByteArray(mainDoc)),
-       "word/styles.xml" -> subst(xmlToByteArray(stylesElem)),
+       //"word/styles.xml" -> subst(xmlToByteArray(stylesElem)),
        "word/_rels/document.xml.rels" -> ((x : Option[Array[Byte]]) => Some(addHyperlinkRels(res.hrefData,x)))) ++
        extraReplace
     writeReplace(replaceFuncs :_*)

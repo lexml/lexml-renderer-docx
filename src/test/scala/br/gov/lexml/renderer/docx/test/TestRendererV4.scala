@@ -57,11 +57,7 @@ object TestRendererV4  extends App {
       val dst2 = new File(destDir,fname + ".xml")
       FileUtils.copyFile(f, dst2) 
       val src = FileUtils.readFileToByteArray(f)
-      val res = lexmlToDocx.convert(src,
-          Seq(
-           ("original.xml" -> ((_ : Option[Array[Byte]]) => Some(src))),
-           ("_rels/.rels" -> addOriginal)
-              ))
+      val res = lexmlToDocx.convert(src)
       FileUtils.writeByteArrayToFile(dst,res)      
     })
 }    
