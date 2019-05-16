@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.gov.lexml</groupId>
 	<artifactId>lexml-renderer-docx</artifactId>
-	<version>1.0.11</version>
+	<version>1.0.12-SNAPSHOT</version>
 	<name>LexML DOCX renderer</name>
 	<description>Renderizador para DOCX</description>
 
@@ -24,7 +24,7 @@
 		<url>https://github.com/lexml/${project.artifactId}</url>
 		<developerConnection>scm:git:https://github.com/lexml/${project.artifactId}.git</developerConnection>
 		<connection>scm:git:https://github.com/lexml/${project.artifactId}.git</connection>
-		<tag>1.0.11</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<distributionManagement>
