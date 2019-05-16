@@ -328,12 +328,18 @@ final case class Ind(
       end : Pts20 = Pts20(0),
       hanging : Pts20 = Pts20(0),
       firstLine : Pts20 = Pts20(0)//twentieths of a point
-      ) extends XmlComponent {
-  lazy val asXML = (
+      ) extends XmlComponent {  
+  lazy val asXML_1 = (
 <w:ind w:start={start.value} 
 	w:end={end.value} 
 	w:hanging={hanging.value}
       w:firstLine={firstLine.value}/>
+    )
+  lazy val asXML = (
+<w:ind w:left={start.nzValue} 
+	w:right={end.nzValue} 
+	w:hanging={hanging.nzValue}
+      w:firstLine={firstLine.nzValue}/>
     )
 }
 
@@ -401,7 +407,9 @@ case object SLR_Auto extends SpacingLineRule("auto")
 
 abstract sealed class Measure[T <: Measure[T]](ratio : Double) extends Product {
   val v : Double  
-  val value = math.round(ratio*v).toInt.toString   
+  val rounded = math.round(ratio*v).toInt
+  val value = rounded.toString   
+  val nzValue = if (rounded > 0) { value } else { null }
 }
 
 abstract sealed class Pts[T <: Pts[T]](ratio : Double) extends Measure[T](ratio)

@@ -57,6 +57,10 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
   def contentStylePPrForDispositivo(t : TipoDispositivo) : Option[PPr]
   def tituloStylePPrForDispositivo(t : TipoDispositivo) : Option[PPr]
   def tituloStyleRPrForDispositivo(t : TipoDispositivo) : Option[RPr]
+  def localDataFechoStylePPr : Option[PPr]
+  def localDataFechoStyleRPr : Option[RPr]
+  def assinaturaTextoStylePPr : Option[PPr]
+  def assinaturaTextoStyleRPr : Option[RPr]  
 }
 
 
@@ -92,6 +96,8 @@ case object RE_TitulosDispositivo extends RenderElement
 final case class RE_TituloDispositivo(t : TipoDispositivo) extends RenderElement(RE_TitulosDispositivo)
 case object RE_TextoAlteracao extends RenderElement
 case object RE_AbrevArtigo extends RenderElement(RE_RotulosDispositivo)
+case object RE_LocalDataFecho extends RenderElement
+case object RE_AssinaturaTexto extends RenderElement
 
 object RenderElementMap {
   
@@ -120,7 +126,10 @@ object Constants {
        RE_RotulosAgrupador -> DefaultStyles.pprRotuloAgrupador,
        RE_Any -> DefaultStyles.pprAny,
        RE_ConteudosDispositivo -> DefaultStyles.pprConteudoDispositivo,
-       RE_TitulosDispositivo -> DefaultStyles.pprConteudoDispositivo
+       RE_TitulosDispositivo -> DefaultStyles.pprConteudoDispositivo,
+       RE_LocalDataFecho -> DefaultStyles.pprLocalDataFecho,
+       RE_AssinaturaTexto -> DefaultStyles.pprAssinaturaTexto,
+       RE_FormulaPromulgacao -> DefaultStyles.pprFormulaPromulgacao
    ),
    rprStyles = Map(
        //RE_TextoAlteracao -> RPr(),
@@ -135,7 +144,10 @@ object Constants {
        RE_Epigrafe -> DefaultStyles.rprEpigrafe,                    
        RE_Preambulo -> DefaultStyles.rprPreambulo,
        RE_Remissao -> DefaultStyles.rprLinkRemissao,
-       RE_TituloDispositivo(TDP_Artigo) -> DefaultStyles.rprTituloArtigo 
+       RE_TituloDispositivo(TDP_Artigo) -> DefaultStyles.rprTituloArtigo,
+       RE_LocalDataFecho -> DefaultStyles.rprLocalDataFecho,
+       RE_AssinaturaTexto -> DefaultStyles.rprAssinaturaTexto,
+       RE_FormulaPromulgacao -> DefaultStyles.rprFormulaPromulgacao
        ),                        
    indentAlteracao = DefaultStyles.indentAlteracao1,
    spacingAlteracao = DefaultStyles.spacingAlteracao1,
@@ -151,8 +163,9 @@ object Constants {
       "variable spread loan", 
       "spread"       
       ).map(x => "\\b" + x + "\\b") ++
-      Set("^O PRESIDENTE DA REP[UÚ]BLICA") ++
-      Set("^O PRESIDENTE DO CONGRESSO")         
+      Set("^O PRESIDENTE DA REP[UÚ]BLICA",
+          "^O PRESIDENTE DO CONGRESSO",
+          "^O Presidente da República(?= decreta:)")         
   )
 } 
 
@@ -217,7 +230,11 @@ final case class RendererState(
   override def nomeAgrupadorPredefIniciaisMaiusc(tipo : TipoAgrupadorPredef) =
     constants.iniciaisMaiusculas.contains(RE_NomeAgrupador(tipo))
   override def tituloStylePPrForDispositivo(t : TipoDispositivo) = RE_TituloDispositivo(t)(constants.pprStyles)
-  override def tituloStyleRPrForDispositivo(t : TipoDispositivo) = RE_TituloDispositivo(t)(constants.rprStyles)    
+  override def tituloStyleRPrForDispositivo(t : TipoDispositivo) = RE_TituloDispositivo(t)(constants.rprStyles)
+  override def localDataFechoStylePPr = constants.pprStyles.get(RE_LocalDataFecho)
+  override def localDataFechoStyleRPr = constants.rprStyles.get(RE_LocalDataFecho)
+  override def assinaturaTextoStylePPr = constants.pprStyles.get(RE_AssinaturaTexto)
+  override def assinaturaTextoStyleRPr = constants.rprStyles.get(RE_AssinaturaTexto)
 }
 
 object RendererState {
@@ -320,7 +337,8 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     aspasP(e.abreAspas,e.fechaAspas,e.notaAlteracao)(
     for {
       pPr <- inspectMDState(_.formulaPromulgacaoParStyle)
-      _ <- parM(pPr)(inlineSeq(e.inlineSeq))
+      rPr <- inspectMDState(_.formulaPromulgacaoCharStyle)
+      _ <- mapM_(e.inlineSeqs)(x => parM(pPr)(withStyleRunRenderer(rPr)(inlineSeq(x.inlineSeq))))
     } yield (()))
              
   def epigrafe(e : Epigrafe) : ParRenderer[Unit] =
@@ -440,7 +458,9 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       _ <- hs.epigrafe.ifDef(epigrafe)
       _ <- hs.ementa.ifDef(ementa)
       _ <- hs.preambulo.ifDef(preambulo)
-      _ <- articulacao(hs.articulacao)      
+      _ <- articulacao(hs.articulacao)
+      _ <- hs.localDataFecho.ifDef(localDataFecho)
+      _ <- mapM_(hs.assinaturas)(assinatura)
     } yield (())
   }  
   
@@ -643,6 +663,21 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     } yield (()))
   }
   
+  def localDataFecho(ldf : LocalDataFecho) : ParRenderer[Unit] = for {
+    localDataFechoPPr <- inspectMDState(_.localDataFechoStylePPr)
+    localDataFechoRPr <- inspectMDState(_.localDataFechoStyleRPr)
+    _ <- mapM_(ldf.inlineSeqs)(x => parM(localDataFechoPPr)(withStyleRunRenderer(localDataFechoRPr)(inlineSeq(x.inlineSeq))))
+  } yield (())
+  
+  def assinatura(assinatura : Assinatura[_]) : ParRenderer[Unit] = assinatura match {
+    case at : AssinaturaTexto => for {
+      assinaturaTextoPPr <- inspectMDState(_.assinaturaTextoStylePPr)
+      assinaturaTextoRPr <- inspectMDState(_.assinaturaTextoStyleRPr)
+      _ <- mapM_(at.inlineSeqs)(x => parM(assinaturaTextoPPr)(withStyleRunRenderer(assinaturaTextoRPr)(inlineSeq(x.inlineSeq))))
+    } yield (())
+    case _ => State.pure(())
+  }
+  
   def blockElement(b : BlockElement) : ParRenderer[Unit] = b match {    
     case x : HTMLBlock => htmlBlock(x)
     case _ => modifyMDState(_.addUnsupported("blockElement: não suportado: ",b))
@@ -777,7 +812,7 @@ class WordMarker(regex : String, change : RPr => RPr) {
       pl
     }
     case x : ParElementContainer[ParElement] => Seq(x.flatMap(fParElementContainer))
-    case x : RunContentContainer[ParElement] => Seq(x.flatMap(fRunContentContainer))
+    //case x : RunContentContainer[ParElement] => Seq(x.flatMap(fRunContentContainer))
     case x => Seq(x)
   }
       

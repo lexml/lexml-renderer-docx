@@ -513,5 +513,86 @@ object DefaultStyles {
       docDefaults = Seq(docDefault),
       styles=sb.result
   )
+  
+  //LocalDataFecho
+  
+  val localDataFechoPPrStyle = makePPrStyle(
+      "LocalDataFechoParagrafo","LocalDataFecho (Paragrafo)",
+      link="LocalDataFechoCaracter")(
+    PPr(  
+         pStyle = Some(defaultParStyle.id),
+         spacing = Some(Spacing(
+             before = Some(Pts20(0)),
+             after=Some(Pts20(6.0)),
+             line=Some(Left(Pts20(12.0))),
+             lineRule=Some(SLR_AtLeast)
+             )
+         )
+    ))
+  
+  val localDataFechoRPrStyle = makeRPrStyle(
+      "LocalDataFechoCaracter","LocalDataFecho (Caracter)",
+      link="LocalDataFechoParagrafo")(
+      RPr(
+        rStyle = Some(defaultCharStyle.id)        
+    ))
+    
+  val pprLocalDataFecho = pPrRef(localDataFechoPPrStyle.id)
+  
+  val rprLocalDataFecho = rPrRef(localDataFechoRPrStyle.id)
+  
+  //AssinaturaTexto
+  
+  val assinaturaTextoPPrStyle = makePPrStyle(
+      "AssinaturaTextoParagrafo","AssinaturaTexto (Paragrafo)",
+      link="AssinaturaTextoCaracter")(
+    PPr(  
+         pStyle = Some(defaultParStyle.id),
+         spacing = Some(Spacing(
+             before = Some(Pts20(0)),
+             after=Some(Pts20(6.0)),
+             line=Some(Left(Pts20(12.0))),
+             lineRule=Some(SLR_AtLeast)
+             )
+         )
+    ))
+  
+  val assinaturaTextoRPrStyle = makeRPrStyle(
+      "AssinaturaTextoCaracter","AssinaturaTexto (Caracter)",
+      link="AssinaturaTextoParagrafo")(
+      RPr(
+        rStyle = Some(defaultCharStyle.id)        
+    ))
+    
+  val pprAssinaturaTexto = pPrRef(assinaturaTextoPPrStyle.id)
+  
+  val rprAssinaturaTexto = rPrRef(assinaturaTextoRPrStyle.id)
+  
+  //FormulaPromulgacao
+  
+  val formulaPromulgacaoPPrStyle = makePPrStyle(
+      "FormulaPromulgacaoParagrafo","FormulaPromulgacao (Paragrafo)",
+      link="FormulaPromulgacaoCaracter")(
+    PPr(  
+         pStyle = Some(defaultParStyle.id),
+         spacing = Some(Spacing(
+             before = Some(Pts20(0)),
+             after=Some(Pts20(6.0)),
+             line=Some(Left(Pts20(12.0))),
+             lineRule=Some(SLR_AtLeast)
+             )
+         )
+    ))
+  
+  val formulaPromulgacaoRPrStyle = makeRPrStyle(
+      "FormulaPromulgacaoCaracter","FormulaPromulgacao (Caracter)",
+      link="FormulaPromulgacaoParagrafo")(
+      RPr(
+        rStyle = Some(defaultCharStyle.id)        
+    ))
+    
+  val pprFormulaPromulgacao = pPrRef(formulaPromulgacaoPPrStyle.id)
+  
+  val rprFormulaPromulgacao = rPrRef(formulaPromulgacaoRPrStyle.id)
 }
 

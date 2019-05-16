@@ -35,18 +35,7 @@ object TestRendererV4  extends App {
   val destDir = new File("/tmp/test/results")
   try { destDir.mkdirs() } catch { case _ : Exception => }
   
-  var count : Int = 1
-  
-  def addOriginal(old : Option[Array[Byte]]) : Option[Array[Byte]] = {
-    import scala.xml._
-    val oldXml = old.map(x => XML.loadString(new String(x,"utf-8"))).
-      getOrElse(<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>)
-    val newXml = oldXml.copy(
-        child = oldXml.child :+ (<Relationship Id="OriginalLexMLDocument" Type="http://www.lexml.gov.br/doc"
-                              Target="original.xml"/>)
-                              )
-    Some(PackageRenderer.xmlToByteArray(newXml))
-  }
+  var count : Int = 1    
   
   files.foreach({ 
     case f =>      
