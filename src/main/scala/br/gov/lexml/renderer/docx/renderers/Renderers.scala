@@ -156,12 +156,12 @@ object Constants {
        RE_NomeAgrupador(TAP_Subsecao)
        ),
    expressoesEmBold = Set[String](
-      "caput",
-      "in fine", "quorum",
-      "libor", "price", "front-end fee", 
-      "transaction fee", 
-      "variable spread loan", 
-      "spread"       
+      "(?i)caput",
+      "(?i)in fine", "(?i)quorum",
+      "(?i)libor", "(?i)price", "(?i)front-end fee", 
+      "(?i)transaction fee", 
+      "(?i)variable spread loan", 
+      "(?i)spread"       
       ).map(x => "\\b" + x + "\\b") ++
       Set("^O PRESIDENTE DA REP[UÚ]BLICA",
           "^O PRESIDENTE DO CONGRESSO",
