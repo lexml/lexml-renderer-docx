@@ -126,7 +126,7 @@ object Constants {
        RE_RotulosAgrupador -> DefaultStyles.pprRotuloAgrupador,
        RE_Any -> DefaultStyles.pprAny,
        RE_ConteudosDispositivo -> DefaultStyles.pprConteudoDispositivo,
-       RE_TitulosDispositivo -> DefaultStyles.pprConteudoDispositivo,
+       RE_TitulosDispositivo -> DefaultStyles.pprTituloDispositivo,
        RE_LocalDataFecho -> DefaultStyles.pprLocalDataFecho,
        RE_AssinaturaTexto -> DefaultStyles.pprAssinaturaTexto,
        RE_FormulaPromulgacao -> DefaultStyles.pprFormulaPromulgacao

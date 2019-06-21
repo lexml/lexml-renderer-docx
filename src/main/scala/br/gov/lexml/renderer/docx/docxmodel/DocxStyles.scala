@@ -496,7 +496,9 @@ object DefaultStyles {
         ))
   
   val rprTituloArtigo = rPrRef(tituloArtigoRPrStyle.id)
-      
+  
+  val pprTituloDispositivo = pPrRef("TituloDispositivoParagrafo")
+  
   //Remissoes
   
   val linkRemissaoRPrStyle = makeRPrStyle(
