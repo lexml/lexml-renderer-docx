@@ -767,8 +767,7 @@ class WordMarker(regex : String, change : RPr => RPr) {
     case x => Seq(x)
   }
   
-    
-  def fParElementContainer(x : ParElement) : Seq[ParElement]  = x match {
+  def fParElementContainer(before : Option[ParElement],x : ParElement, next: Option[ParElement]) : Seq[ParElement]  = x match {
     case x : R => {
       val l : Seq[Either[(T,Seq[(Int,Int)]),RunContent]] = x.contents.collect {
         case t : T =>
@@ -785,6 +784,8 @@ class WordMarker(regex : String, change : RPr => RPr) {
           var last : Int = 0
           lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))          
           def passthrough(start : Int) {
+            val mayAddWSatEnd = start < t.text.length ||
+                                next.isDefined
             if(start > last) {              
               val t1 = t.text.substring(last,start)
               val tb = Seq.newBuilder[T]
@@ -792,7 +793,7 @@ class WordMarker(regex : String, change : RPr => RPr) {
                 tb += T(" ",preserveSpace=true)                
               }
               tb += T(t1.trim)             
-              if(start < t.text.length && t1.last.isWhitespace) {
+              if(mayAddWSatEnd && t1.last.isWhitespace) {
                 tb += T(" ",preserveSpace=true)
               }
               b += x.copy(contents = tb.result())

@@ -58,8 +58,7 @@ final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) exte
     copy(runs = runs ++ els)
   def isEmpty = runs.forall(_.isEmpty)
   
-  def flatMap(f : ParElement => Seq[ParElement]) : P =
-    copy(runs = runs.flatMap(f))
+  def replaceParElements(pl : Seq[ParElement]) = copy (runs = pl)    
 
   override val parElements = runs
 }
@@ -68,8 +67,15 @@ sealed trait ParElement extends Product with XmlComponent {
   def isEmpty : Boolean = false
 }
 
-trait ParElementContainer[T <: ParElementContainer[T]] {
-  def flatMap(f : ParElement => Seq[ParElement]) : T
+trait ParElementContainer[T <: ParElementContainer[T]] {  
+  final def flatMap(f : (Option[ParElement],ParElement,Option[ParElement]) => Seq[ParElement]) : T = {
+    val t = parElements.zipAll(None +: parElements.init.map(Some(_)), null, None).
+            zipAll(parElements.tail.map(Some(_)), null, None).collect {
+      case ((a,b),c) => (b,a,c)
+    }
+    replaceParElements(t.flatMap(f.tupled))    
+  }
+  def replaceParElements(pl : Seq[ParElement]) : T
   def parElements : Seq[ParElement]
 }
 
@@ -240,9 +246,8 @@ final case class Del(id : String, content : Seq[ParElement] = Seq(), author : Op
     {NodeSeq.fromSeq(content.map(_.asXML))}
     </w:del>
       )
-   def flatMap(f : ParElement => Seq[ParElement]) : Del =
-    copy(content = content.flatMap(f))
-
+  def replaceParElements(pl : Seq[ParElement]) = copy (content = pl)        
+   
   override val parElements = content
 }
 
@@ -253,8 +258,7 @@ final case class Ins(id : String, content : Seq[ParElement] = Seq(), author : Op
     {NodeSeq.fromSeq(content.map(_.asXML))}
     </w:ins>
       )
-  def flatMap(f : ParElement => Seq[ParElement]) : Ins =
-    copy(content = content.flatMap(f))
+  def replaceParElements(pl : Seq[ParElement]) = copy (content = pl)    
   override val parElements = content
 }
 
@@ -269,8 +273,9 @@ final case class Hyperlink(
    {NodeSeq.fromSeq(content.map(_.asXML))}
   </w:hyperlink>
       )
-  def flatMap(f : ParElement => Seq[ParElement]) : Hyperlink =
-    copy(content = content.flatMap(f))
+    
+  def replaceParElements(pl : Seq[ParElement]) = copy (content = pl)      
+    
   override val parElements = content
 }
 
