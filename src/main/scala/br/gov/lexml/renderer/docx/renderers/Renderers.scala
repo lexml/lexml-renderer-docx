@@ -165,7 +165,8 @@ object Constants {
       ).map(x => "\\b" + x + "\\b") ++
       Set("^O PRESIDENTE DA REP[UÚ]BLICA",
           "^O PRESIDENTE DO CONGRESSO",
-          "^O Presidente da República(?= decreta:)")         
+          "^O Presidente da República(?= decreta:)",
+          "^DECRETA: *$")         
   )
 } 
 
