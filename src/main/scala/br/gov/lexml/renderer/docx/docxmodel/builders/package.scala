@@ -12,9 +12,9 @@ type ParBuilderMonad[T,A] = State[ParBuilderState[T],A]
 
 type ParBuilderMonadStmt[T] = ParBuilderMonad[T,Unit]  
 
-type MainDocBuilderMonad[T,A] = State[MainDocBuilderState[T],A]
+type DocxCompSeqBuilderMonad[T,A] = State[DocxCompSeqBuilderState[T],A]
 
-type MainDocBuilderMonadStmt[T] = MainDocBuilderMonad[T,Unit]  
+type DocxCompSeqBuilderMonadStmt[T] = DocxCompSeqBuilderMonad[T,Unit]  
 
  def mapM_[T,S](x : Seq[T])(f : T => State[S,_]) : State[S,Unit] = {
       if(x.isEmpty) { State.pure(()) } else {

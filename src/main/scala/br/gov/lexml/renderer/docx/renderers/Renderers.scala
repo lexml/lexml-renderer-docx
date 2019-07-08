@@ -15,9 +15,9 @@ import br.gov.lexml.schema.scala.LexmlSchema
 import org.apache.commons.io.IOUtils
 import org.slf4j._
 import scala.util.matching.Regex
+import br.gov.lexml.doc.xml.XmlConverter.SomeLexmlDocument
+import scala.language.existentials
 
-final case class HrefData(href : URI, id : String, tooltip : Option[String] = None, anchor : Option[String] = None,
-    rPr : Option[RPr] = None)
 
 trait ParRendererState[T <: ParRendererState[T]] {
   def getBase : Option[URI]
@@ -27,6 +27,7 @@ trait ParRendererState[T <: ParRendererState[T]] {
   def addUnsupported(msg : String, elem : Any) : T
   def currentRPrStyle : Option[RPr]
   def setCurrentRPrStyle(rPr : Option[RPr]) : T
+  def endnoteId(origId : String) : String
 }
 
 trait RunRendererState[T <: RunRendererState[T]] {
@@ -61,6 +62,7 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
   def localDataFechoStyleRPr : Option[RPr]
   def assinaturaTextoStylePPr : Option[PPr]
   def assinaturaTextoStyleRPr : Option[RPr]  
+  def notaReferenciadaRPrStyle : Option[RPr]
 }
 
 
@@ -98,6 +100,7 @@ case object RE_TextoAlteracao extends RenderElement
 case object RE_AbrevArtigo extends RenderElement(RE_RotulosDispositivo)
 case object RE_LocalDataFecho extends RenderElement
 case object RE_AssinaturaTexto extends RenderElement
+case object RE_NotaReferenciada extends RenderElement
 
 object RenderElementMap {
   
@@ -147,7 +150,8 @@ object Constants {
        RE_TituloDispositivo(TDP_Artigo) -> DefaultStyles.rprTituloArtigo,
        RE_LocalDataFecho -> DefaultStyles.rprLocalDataFecho,
        RE_AssinaturaTexto -> DefaultStyles.rprAssinaturaTexto,
-       RE_FormulaPromulgacao -> DefaultStyles.rprFormulaPromulgacao
+       RE_FormulaPromulgacao -> DefaultStyles.rprFormulaPromulgacao,
+       RE_NotaReferenciada -> DefaultStyles.rprNotaReferenciada
        ),                        
    indentAlteracao = DefaultStyles.indentAlteracao1,
    spacingAlteracao = DefaultStyles.spacingAlteracao1,
@@ -176,8 +180,10 @@ final case class RendererState(
     hrefNext : Int = 1,    
     hrefToHrefData : Map[URI,HrefData] = Map(),
     unsupportedCases : Seq[(String,Any)] = Seq(),
-    currentRPrStyle : Option[RPr] = None,    
-    constants : Constants
+    currentRPrStyle : Option[RPr] = None,   
+    endnoteRefs : Set[String] = Set(),
+    constants : Constants = Constants(),
+    endnoteIdMap : Map[String,String] 
     ) extends ParRendererState[RendererState] 
         with MainDocRendererState[RendererState] 
         with RunRendererState[RendererState] {  
@@ -236,6 +242,10 @@ final case class RendererState(
   override def localDataFechoStyleRPr = constants.rprStyles.get(RE_LocalDataFecho)
   override def assinaturaTextoStylePPr = constants.pprStyles.get(RE_AssinaturaTexto)
   override def assinaturaTextoStyleRPr = constants.rprStyles.get(RE_AssinaturaTexto)
+  override def notaReferenciadaRPrStyle = constants.rprStyles.get(RE_NotaReferenciada)
+  
+  override def endnoteId(origId : String) : String = 
+    endnoteIdMap(origId)      
 }
 
 object RendererState {
@@ -247,13 +257,15 @@ object RendererState {
           hrefToHrefData = b.hrefToHrefData,
           unsupportedCases = b.unsupportedCases,
           currentRPrStyle = a.currentRPrStyle,          
-          constants = a.constants)
+          constants = a.constants,
+          endnoteRefs = a.endnoteRefs ++ b.endnoteRefs,
+          endnoteIdMap = a.endnoteIdMap ++ b.endnoteIdMap)
     def extract(a : RendererState) = a                          
   }
 }
 
 object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[RendererState] 
-  with MainDocBuilderOps[RendererState] {
+  with DocxCompSeqBuilderOps[RendererState] {
   
   type RunRenderer[A] = PB[A] 
   
@@ -424,10 +436,17 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   }
   
   def inlineElement(ie : InlineElement) : RunRenderer[Unit] = ie match {
+      case nr : NotaReferenciada => notaReferenciada(nr) 
       case ie : LXInlineElement => lxInlineElement(ie)
-      case hie: HTMLinlineElement => htmlInlineElement(hie)
+      case hie: HTMLinlineElement => htmlInlineElement(hie)      
       case x => modifyPState(_.addUnsupported("lxInlineElement: não suportado",x))
     }
+  
+  def notaReferenciada(nr : NotaReferenciada) : RunRenderer[Unit] = for {        
+    rPr <- inspectPState(_.notaReferenciadaRPrStyle)
+    id <- inspectPState(_.endnoteId(nr.nota.id))    
+    _ <- runM(rPr)(endnoteReference(id))    
+  } yield (())
   
   def inlineSeq(il : InlineSeq) : RunRenderer[Unit] = {          
     val rr = mixed(il.mixedElems)
@@ -435,8 +454,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   }
     
   def mixed(m : Mixed[InlineElement]) : RunRenderer[Unit] = mixedWith[InlineElement](m,inlineElement)
-  
-  
+    
   def mixedWith[A](m : Mixed[A], f : A => RunRenderer[Unit]) : RunRenderer[Unit] = for {
     rPr <- inspectPState(_.currentRPrStyle)
     _ <- mapM_(m.elems)(x => x match {
@@ -465,9 +483,11 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     } yield (())
   }  
   
-  def lexmlDocument(doc : LexmlDocument) : ParRenderer[Unit] = documentContents(doc.contents)
+  def lexmlDocument(doc : SomeLexmlDocument) : ParRenderer[Unit] = {    
+    documentContents(doc.contents)
+  }
     
-  def documentContents(contents : DocumentContents) : ParRenderer[Unit] = contents match {
+  def documentContents(contents : DocumentContents[T] forSome { type T <: DocumentContents[T] }) : ParRenderer[Unit] = contents match {
     case n : Norma => norma(n)
     case pj : ProjetoNorma => projetoNorma(pj)
     case x => modifyMDState(_.addUnsupported("documentContents: não suportado",x))
@@ -754,8 +774,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
 }
 
 final case class MainDocRendererResult(
-    doc : DocxMainDocument,
-    hrefData : Seq[HrefData],
+    docx : Docx,
     unsupportedCases : Seq[(String,Any)])
 
 class WordMarker(regex : String, change : RPr => RPr) {    
@@ -817,13 +836,14 @@ class WordMarker(regex : String, change : RPr => RPr) {
     //case x : RunContentContainer[ParElement] => Seq(x.flatMap(fRunContentContainer))
     case x => Seq(x)
   }
-      
-  def fDocxTextComponent(x : DocxTextComponent) : Seq[DocxTextComponent] = x match {
+          
+  def apply(x : DocxTextComponent) : Seq[DocxTextComponent] = x match {
     case p : P => Seq(p.flatMap(fParElementContainer))
+    case x => Seq(x)
   }
   
   def apply(x : DocxMainDocument) : DocxMainDocument = 
-    x.flatMap(fDocxTextComponent)
+    x.flatMap(apply)
 }
 
 object WordMarker {  
@@ -833,26 +853,72 @@ object WordMarker {
   val AddBold : RPr => RPr = _.copy(bold = Some(true))                 
 }
 
-final case class MainDocRenderer(constants : Constants = Constants()) {  
+final case class MainDocRenderer(constants : Constants = Constants(), baseDocx : Docx = Docx()) {
   
-  def render(doc : LexmlDocument) : MainDocRendererResult = {    
-    val st0 = RendererState(constants = constants) 
-    val (d,st1) = Renderers.lexmlDocument(doc).makeMainDoc(st0).value
-    val d1 = d.copy(d.contents.filterNot(_.isEmpty))
-    val reformatRules : Seq[(String,RPr => RPr)] = Seq(
+  val st0 = RendererState(constants = constants, endnoteIdMap = Map("aaa" -> "bbb"))
+    
+  val reformatRules : Seq[(String,RPr => RPr)] = Seq(
       WordMarker.makeOr(constants.expressoesEmBold.to[Seq]) -> WordMarker.AddBold
       )
+
+  def makeEndnotes(doc : SomeLexmlDocument, notas : Seq[(Int,Option[String],Nota)]) : 
+    (Seq[(String,Seq[DocxTextComponent])],Seq[String],Map[String,String]) = {
+    val orphans = notas.collect { case (seq,None,_) => seq.toString }.to[Seq]    
+    val endnotes = notas.map { case (seq,_,nota) =>      
+      val contentsM = for {
+        _ <- mapM_(nota.contents)(Renderers.paragraph)
+      } yield (()) 
+      val contents = contentsM.makeDocxCompSeq(st0).value._1
+      val contents1 = reformatRules.foldLeft(contents) { case (d,(regex,change)) =>
+        d.flatMap { x => new WordMarker(regex,change)(x) }
+      } 
+      (seq.toString,contents1)
+    }
+    val idToSeq = notas.collect { 
+      case (seq,Some(id),_) => (id,seq.toString) 
+      case (seq,None,_) => (seq.toString,seq.toString)
+      }.toMap    
+    (endnotes,orphans,idToSeq)
+  }
+      
+  def render(doc : SomeLexmlDocument) : MainDocRendererResult = {
+    val notas = doc.metadado.notas.zipWithIndex.map { case (nota,idx) =>
+      (idx+1,nota.id,nota)
+    }
+    
+    val (endnotes,orphans,idToSeq) = makeEndnotes(doc,notas)
+    
+    val doc1 = 
+      if(!orphans.isEmpty) {        
+        doc.copy(contents = doc.contents.mapNorma { norma => 
+          val epigrafe = norma.contents.epigrafe.map { ep =>
+            val elems1 = ep.inlineSeq.mixedElems.elems ++
+                     orphans.map { id => Left(NotaReferenciada(IDREF(id))) }            
+            ep.copy(inlineSeq = ep.inlineSeq.copy(mixedElems = Mixed(elems1)))
+          }
+          norma.copy(contents = norma.contents.copy(epigrafe = epigrafe))          
+        })        
+      } else { 
+        doc
+      }
+    
+    val st0_1 = st0.copy(endnoteIdMap = idToSeq)
+
+    val (d,st1) = Renderers.lexmlDocument(doc1).makeMainDoc(st0_1).value
+    val d1 = d.copy(d.contents.filterNot(_.isEmpty))           
     val d2 = reformatRules.foldLeft(d1) { case (d,(regex,change)) =>
       new WordMarker(regex,change)(d)
-    }       
+    }
+    
+    
+    
+    val docx = baseDocx.copy(mainDoc = d2, hyperlinks = st1.hrefToHrefData.values.to[Seq],
+        endnotes = endnotes)
     MainDocRendererResult(
-        doc=d2,
-        hrefData = st1.hrefToHrefData.values.to[Seq],
+        docx=docx,        
         unsupportedCases = st1.unsupportedCases)
   }
 }
-
-final case class DocxDocument(mainDoc : DocxMainDocument)
 
 object PackageRenderer {
   private def logger = LoggerFactory.getLogger(classOf[PackageRenderer])
@@ -916,33 +982,24 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
        
   private lazy val stylesElem = DefaultStyles.styles.asXML  //  DocxMainPartRenderer.stylesElem
   
-  private def addHyperlinkRels(hrefData : Seq[HrefData], relDoc : Option[Array[Byte]]) = {
-    import scala.xml._
-    val relXml = XML.loadString(new String(relDoc.get,"utf-8"))
-    val relXml1 = relXml.copy(child = relXml.child ++
-        hrefData.map { case hrefData =>
-          <Relationship Id={hrefData.id} 
-										Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" 
-										Target={"http://www.lexml.gov.br/urn/" + hrefData.href} 
-									  TargetMode="External"/>
-        })              
-    xmlToByteArray(relXml1)
-  }
-  
-  def render(doc : LexmlDocument,
-      extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {              
-    val renderer = new MainDocRenderer(Constants.default)
+  def render(doc : SomeLexmlDocument,
+      extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {    
+    val baseDocx = Docx(
+        baseRelationships =
+          referenceEntries.get("word/_rels/document.xml.rels").map { f =>            
+            Relationships.fromByteArray(f)
+          }.getOrElse(Relationships())
+        )    
+        
+        
+    val renderer = new MainDocRenderer(Constants.default,baseDocx)
     val res = renderer.render(doc)
     res.unsupportedCases.foreach { case (msg,x) =>
       logger.warn("Caso não suportado pelo renderer: " + msg + "\n" + x.toString)       
     }        
     def subst(v : Array[Byte]) : ReplaceFunc = _ => Some(v)
-    val mainDoc = res.doc.asXML    
-    val replaceFuncs : Seq[(String,ReplaceFunc)] = Seq(
-        "word/document.xml" -> subst(xmlToByteArray(mainDoc)),
-       //"word/styles.xml" -> subst(xmlToByteArray(stylesElem)),
-       "word/_rels/document.xml.rels" -> ((x : Option[Array[Byte]]) => Some(addHyperlinkRels(res.hrefData,x)))) ++
-       extraReplace
+    val files = res.docx.files
+    val replaceFuncs = files.mapValues { subst }.to[Seq]  ++ extraReplace
     writeReplace(replaceFuncs :_*)
   }
 }

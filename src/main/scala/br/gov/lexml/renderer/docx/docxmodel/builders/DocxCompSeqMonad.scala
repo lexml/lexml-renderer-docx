@@ -8,18 +8,18 @@ import cats.data._
 import catImplicits._
 import br.gov.lexml.renderer.docx.docxmodel._
   
-final case class MainDocBuilderState[Q](
+final case class DocxCompSeqBuilderState[Q](
     contents : Seq[DocxTextComponent] = Seq(),
-    value : Q) extends Modifiable[Q,MainDocBuilderState[Q]] {
+    value : Q) extends Modifiable[Q,DocxCompSeqBuilderState[Q]] {
   def setValue(x : Q) = copy(value = x)
 }
 
-trait MainDocBuilderOps[T] {  
+trait DocxCompSeqBuilderOps[T] {  
   import implicits._        
   
-  final type MST = MainDocBuilderState[T]
+  final type MST = DocxCompSeqBuilderState[T]
   
-  final type MB[A] = MainDocBuilderMonad[T,A]
+  final type MB[A] = DocxCompSeqBuilderMonad[T,A]
       
   final def putDTC(pe : DocxTextComponent*) : MB[Unit] = 
     State.modify((x : MST) => x.copy(contents = x.contents ++ pe)) 
@@ -32,7 +32,7 @@ trait MainDocBuilderOps[T] {
     State.modify(_.copy(value = v))
        
   final def mergeMDState[Q](v : Q)(implicit mo : Mergeable2[T,Q]) : 
-    MainDocBuilderMonad[T,Unit] = 
+    DocxCompSeqBuilderMonad[T,Unit] = 
     State.modify(x => x.copy(value = mo.merge(x.value,v)))
 
   final def modifyMDState(f : T => T) : MB[Unit] = 

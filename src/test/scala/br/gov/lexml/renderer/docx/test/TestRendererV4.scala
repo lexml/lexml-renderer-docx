@@ -20,17 +20,13 @@ object TestRendererV4  extends App {
   val lexmlToDocx = new LexmlToDocx(lexmlToDocxConfig)
         
   val sampleDir = new File("/tmp/test/samples")
-  println(s"${sampleDir.isDirectory()}, ${sampleDir.exists()}")
   
   val files1 = Option(sampleDir.listFiles()).getOrElse(Array()).filterNot(_ == null)  
   def file_filter(f : File) = 
       f != null && f.getName().endsWith(".xml")
       
   val limit = 5000
-  val files = files1.filter(file_filter).to[Seq].take(limit)
-  
-      
-  println(s"files.size = ${files.size}")
+  val files = files1.filter(file_filter).to[Seq].take(limit)         
  
   val destDir = new File("/tmp/test/results")
   try { destDir.mkdirs() } catch { case _ : Exception => }

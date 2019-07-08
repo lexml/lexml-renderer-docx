@@ -596,5 +596,7 @@ object DefaultStyles {
   val pprFormulaPromulgacao = pPrRef(formulaPromulgacaoPPrStyle.id)
   
   val rprFormulaPromulgacao = rPrRef(formulaPromulgacaoRPrStyle.id)
+  
+  val rprNotaReferenciada = rPrRef("NotaReferenciada")
 }
 

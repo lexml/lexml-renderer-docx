@@ -78,6 +78,10 @@ trait RunBuilderOps[T] {
   
   final def contentPart(id : String) = putRC(ContentPart(id))   
   
+  final def footnoteReference(id : String) = putRC(FootnoteReference(id))
+  
+  final def endnoteReference(id : String) = putRC(EndnoteReference(id))
+  
   final def getRState : RB[T] = State.inspect(_.value)
   
   final def setRState(v : T) : RB[Unit] = State.modify(_.copy(value = v))

@@ -3,7 +3,7 @@ package br.gov.lexml.renderer.docx.docxmodel
 import scala.xml._
 import java.io._
 import org.apache.commons.io.IOUtils
-
+import scala.language.existentials
 
 object XmlUtils {
   def xmlToByteArray(e : Elem) = {
@@ -14,21 +14,223 @@ object XmlUtils {
   }
 }
 
+final case class HrefData(href : java.net.URI, id : String, tooltip : Option[String] = None, anchor : Option[String] = None,
+    rPr : Option[RPr] = None) {
+  def toRelationship = Relationship(id = id, target = href, targetMode = TM_External, typ = RT_Hyperlink)
+}
+
+abstract sealed class RelationshipType extends Product {
+  val value : String
+}
+
+object RelationshipType {
+  def apply(value : String) : RelationshipType = value match {
+    case RT_Hyperlink.value => RT_Hyperlink
+    case _ => RT_Other(value)
+  }
+}
+
+case object RT_Hyperlink extends RelationshipType {
+  override val value = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+}
+
+case object RT_Footer extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/footer" // footer1.xml
+}
+
+case object RT_Settings extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/settings" // settings.xml
+}
+
+case object RT_Header extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/header" // header1.xml
+}
+
+case object RT_Styles extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/styles" // styles.xml
+}
+
+case object RT_Numbering extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/numbering" // numbering.xml
+}
+
+case object RT_Endnotes extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/endnotes" // endnotes.xml
+}
+
+case object RT_Footnotes extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/footnotes" // footnotes.xml
+}
+
+case object RT_Theme extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/theme" // theme/theme1.xml
+}
+
+case object RT_WebSettings extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/webSettings" // webSettings.xml
+}
+
+case object RT_FontTable extends RelationshipType {
+  override val value = "http://purl.oclc.org/ooxml/officeDocument/relationships/fontTable" // fontTable.xml
+}
+
+
+final case class RT_Other(override val value : String) extends RelationshipType
+
+abstract sealed class TargetMode(val isDefault : Boolean = false) extends Product {
+  val value : String
+  lazy val nonDefaultValue : String = if(isDefault) { null } else { value }
+}
+
+object TargetMode {
+  def apply(value : Option[String]) : TargetMode = value match {
+    case None => TM_Implicit
+    case Some(TM_External.value) => TM_External
+    case Some(TM_Implicit.value) => TM_Implicit
+    case Some(x) => TM_Other(x)
+  }
+}
+
+case object TM_External extends TargetMode(false) {
+  override val value = "External"
+}
+
+case object TM_Implicit extends TargetMode(true) {
+  override val value = "Implicit"
+}
+
+final case class TM_Other(override val value : String) extends TargetMode(value == TM_Implicit.value) 
+    
+final case class Relationship(id : String, typ : RelationshipType, target : java.net.URI, targetMode : TargetMode) extends XmlComponent {
+  lazy val asXML : Elem = 
+      (  
+      <Relationship xmlns="http://schemas.openxmlformats.org/package/2006/relationships" 
+					Id={id} Type={typ.value} Target={target.toString()} TargetMode={targetMode.nonDefaultValue}/>
+      )
+  
+}
+
+final case class Relationships(relationships : Seq[Relationship] = Seq()) extends XmlComponent {
+  lazy val asXML : Elem = (
+    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+      {NodeSeq.fromSeq(relationships.map(_.asXML))}
+    </Relationships>		  
+      )
+}
+
+object Relationships {
+  def fromByteArray(data : Array[Byte]) : Relationships = {    
+    def rel(id : String, targetStr : String, typStr : String, targetModeStr : Option[String]) : Relationship = {
+      Relationship(id = id,
+          target = new java.net.URI(targetStr),
+          typ = RelationshipType(typStr),
+          targetMode = TargetMode(targetModeStr))      
+    }
+    val root = XML.load(new java.io.ByteArrayInputStream(data))
+    
+    val rels = (root \\ "Relationship").to[Seq].collect {
+      case e : Elem =>        
+        rel(e.attribute("Id").get.head.text,
+         e.attribute("Target").get.head.text,
+         e.attribute("Type").get.head.text,
+         e.attribute("TargetMode").flatMap(_.headOption.map(_.text)))
+    }
+    Relationships(relationships = rels)
+  }
+}
+    
+final case class Docx(
+    mainDoc : DocxMainDocument = DocxMainDocument(),
+    baseRelationships : Relationships = Relationships(),    
+    hyperlinks : Seq[HrefData] = Seq(),
+    endnotes : Seq[(String,Seq[DocxTextComponent])]= Seq(),
+    footnotes : Seq[(String,Seq[DocxTextComponent])] = Seq()) {    
+  def mainDocFile = XmlUtils.xmlToByteArray(mainDoc.asXML)
+  
+  def relationshipsFile = XmlUtils.xmlToByteArray(relationships.asXML)
+  
+  def files : Map[String,Array[Byte]] = Map(
+    "word/document.xml" -> mainDocFile,
+    "word/_rels/document.xml.rels" -> relationshipsFile,
+    "word/footnotes.xml" -> makeNotesFile("footnotes","footnote",footnotes),
+    "word/endnotes.xml" -> makeNotesFile("endnotes","endnote",endnotes)
+  )
+    
+  def makeNotesFile(rootLabel : String, childLabel : String, notes : Seq[(String,Seq[DocxTextComponent])]) : Array[Byte] = {    
+      val innerElems1 = Seq(
+        <w:endnote w:type="separator" w:id="-1">
+    			<w:p>
+      			<w:r>
+        			<w:separator/>
+      			</w:r>
+    		 	</w:p>
+  			</w:endnote>,
+        <w:endnote w:type="continuationSeparator" w:id="0">
+    		  <w:p>
+      		 	<w:r>
+        			<w:continuationSeparator/>
+      			</w:r>
+    			</w:p>
+  			</w:endnote>)        
+    val refHead = Seq(
+        R(rPr = Some(RPr(rStyle = Some("Refdenotadefim"))),Seq(EndnoteRef)),
+        R(rPr = None,Seq(T(" ",true)))
+        )
+        
+    val innerElems2 = notes.map { case (id,contents) =>      
+      val first = contents.head match {
+        case p : P =>
+          p.replaceParElements(refHead ++ p.parElements)
+      }
+      val contents2 = first +: contents.tail
+            
+      
+			<w:note w:id={id}>					
+          {NodeSeq.fromSeq(contents2.map(_.asXML))}
+      </w:note> 
+    }
+    val innerElems = (innerElems1 ++ innerElems2).map(_.copy(label = childLabel))    
+    val rootElem = (
+      <w:root xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+			{ NodeSeq fromSeq (innerElems)
+			}
+			</w:root>
+			).copy(label = rootLabel)
+	  XmlUtils.xmlToByteArray(rootElem)
+  }    
+  
+  def relationships : Relationships = {    
+    val rels = baseRelationships.relationships ++ hyperlinks.map(_.toRelationship)        
+    baseRelationships.copy(relationships = rels)
+  }            
+}
 
 final case class DocxMainDocument(contents : Seq[DocxTextComponent] = Seq())
     extends XmlComponent with DocxTextComponentContainer[DocxMainDocument]  {
   override def asXML : Elem = (
-<w:document xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" mc:Ignorable="w14 wp14">
+<w:document xmlns:o="urn:schemas-microsoft-com:office:office" 
+						xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" 
+						xmlns:v="urn:schemas-microsoft-com:vml" 
+						xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" 
+						xmlns:w10="urn:schemas-microsoft-com:office:word" 
+						xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" 
+						xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" 
+						xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" 
+						xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+						xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" 
+						xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" 
+						mc:Ignorable="w14 wp14">
   <w:body>
     {NodeSeq.fromSeq(contents.map(_.asXML))}
     <w:sectPr>
-      <w:type w:val="nextPage"/>
+      <w:endnotePr>
+				<w:numFmt w:val="chicago"/>
+			</w:endnotePr>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:left="1701" w:right="1701" w:header="0" w:top="1417" w:footer="0" w:bottom="1417" w:gutter="0"/>
-      <w:pgNumType w:fmt="decimal"/>
-      <w:formProt w:val="false"/>
-      <w:textDirection w:val="lrTb"/>
-      <w:docGrid w:type="default" w:linePitch="360" w:charSpace="4096"/>
+			<w:cols w:space="720"/>      
+      <w:formProt w:val="0"/>      
+      <w:docGrid w:linePitch="360" w:charSpace="4096"/>
     </w:sectPr>
   </w:body>
 </w:document>
@@ -293,6 +495,14 @@ case class T(text : String, preserveSpace : Boolean = false) extends RunContent 
   override val isEmpty = text.trim.size == 0
 }
 
+case object EndnoteRef extends RunContent {
+  val asXML = <w:endnoteRef/>
+}
+
+case object FootnoteRef extends RunContent {
+  val asXML = <w:footnoteRef/>
+}
+
 abstract sealed class PTabAlignment(val value : String) extends Product 
 
 case object PTA_Left extends PTabAlignment("left")
@@ -402,6 +612,14 @@ final case class Tab(
 
 final case object TAB extends RunContent {
   def asXML = <w:tab/>
+}
+
+final case class FootnoteReference(id : String) extends RunContent {
+  def asXML = <w:foornoteReference w:id={id}/>
+}
+
+final case class EndnoteReference(id : String) extends RunContent {
+  def asXML = <w:endnoteReference w:id={id}/>
 }
 
 abstract sealed class SpacingLineRule(val value : String) extends Product

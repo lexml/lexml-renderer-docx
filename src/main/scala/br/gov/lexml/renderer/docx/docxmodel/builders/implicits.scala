@@ -21,16 +21,20 @@ object implicits {
     }
   }
   
-  implicit class MainDocBuilderMonadStmtOps[T](d : MainDocBuilderMonadStmt[T]) {
+  implicit class DocxCompSeqBuilderMonadStmtOps[T](d : DocxCompSeqBuilderMonadStmt[T]) {
     import br.gov.lexml.renderer.docx.docxmodel.proc.trimP
-    def makeMainDoc(v0 : T) : Eval[(DocxMainDocument,T)] = {
-      d.run(MainDocBuilderState(value = v0)) map { case (rs,_) =>
+    
+    def makeMainDoc(v0 : T) : Eval[(DocxMainDocument,T)] =
+      makeDocxCompSeq(v0).map { case (contents,v) => (DocxMainDocument(contents = contents),v) }
+    
+    def makeDocxCompSeq(v0 : T) : Eval[(Seq[DocxTextComponent],T)] = {
+      d.run(DocxCompSeqBuilderState(value = v0)) map { case (rs,_) =>
         val contents = rs.contents
         val contents1 =  contents.collect {
           case p : P => trimP(p)
           case x => x
         }
-          (DocxMainDocument(contents = contents1),rs.value)
+          (contents1,rs.value)
       }
     }
   }
