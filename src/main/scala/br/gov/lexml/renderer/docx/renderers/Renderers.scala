@@ -443,9 +443,12 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     }
   
   def notaReferenciada(nr : NotaReferenciada) : RunRenderer[Unit] = for {        
-    rPr <- inspectPState(_.notaReferenciadaRPrStyle)
+    //rPr <- inspectPState(_.notaReferenciadaRPrStyle)
     id <- inspectPState(_.endnoteId(nr.nota.id))    
-    _ <- runM(rPr)(endnoteReference(id))    
+    rPr <- inspectPState(_.currentRPrStyle)
+    _ <- runM(rPr)(text("("))
+    _ <- runM(rPr)(endnoteReference(id))
+    _ <- runM(rPr)(text(")"))
   } yield (())
   
   def inlineSeq(il : InlineSeq) : RunRenderer[Unit] = {          

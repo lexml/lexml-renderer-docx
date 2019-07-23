@@ -173,7 +173,7 @@ final case class Docx(
     			</w:p>
   			</w:endnote>)        
     val refHead = Seq(
-        R(rPr = Some(RPr(rStyle = Some("Refdenotadefim"))),Seq(EndnoteRef)),
+        R(rPr = Some(RPr(rStyle = Some("Refdenotadefim"))),Seq(T("("),EndnoteRef,T(")"))),
         R(rPr = None,Seq(T(" ",true)))
         )
         
