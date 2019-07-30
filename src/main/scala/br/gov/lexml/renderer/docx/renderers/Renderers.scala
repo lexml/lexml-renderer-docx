@@ -170,7 +170,8 @@ object Constants {
       Set("^O PRESIDENTE DA REP[UÚ]BLICA",
           "^O PRESIDENTE DO CONGRESSO",
           "^O Presidente da República(?= decreta:)",
-          "^DECRETA: *$")         
+          "^DECRETA: *$",
+          "^Pre[âa]mbulo$")         
   )
 } 
 
