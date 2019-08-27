@@ -14,12 +14,12 @@ import org.apache.commons.codec.digest.DigestUtils
 final case class LexmlToDocxConfig(
     val referenceDocx : Array[Byte],
     val constants : Constants
-    )
+    )    
 
     
 object LexmlToDocxConfig {
   protected [LexmlToDocxConfig] val logger = LoggerFactory.getLogger(classOf[LexmlToDocxConfig])
-  private lazy val defaultReferenceDocx : Option[Array[Byte]] = {
+  lazy val defaultReferenceDocx : Option[Array[Byte]] = {
     val path = "docx/reference.docx"
     try {      
       val is = this.getClass.getClassLoader.getResourceAsStream(path)

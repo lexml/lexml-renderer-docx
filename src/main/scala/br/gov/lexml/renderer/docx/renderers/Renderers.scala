@@ -28,6 +28,7 @@ trait ParRendererState[T <: ParRendererState[T]] {
   def currentRPrStyle : Option[RPr]
   def setCurrentRPrStyle(rPr : Option[RPr]) : T
   def endnoteId(origId : String) : String
+  def skipHyperlink : Boolean
 }
 
 trait RunRendererState[T <: RunRendererState[T]] {
@@ -114,7 +115,8 @@ final case class Constants(
    indentAlteracao : Ind = Ind(),
    spacingAlteracao : Spacing = Spacing(),
    iniciaisMaiusculas : Set[RenderElement] = Set(),
-   expressoesEmBold : Set[String] = Set()
+   expressoesEmBold : Set[String] = Set(),
+   skipHyperlink : Boolean = false
 )
 
 object Constants {
@@ -184,7 +186,7 @@ final case class RendererState(
     currentRPrStyle : Option[RPr] = None,   
     endnoteRefs : Set[String] = Set(),
     constants : Constants = Constants(),
-    endnoteIdMap : Map[String,String] 
+    endnoteIdMap : Map[String,String] = Map()
     ) extends ParRendererState[RendererState] 
         with MainDocRendererState[RendererState] 
         with RunRendererState[RendererState] {  
@@ -246,7 +248,9 @@ final case class RendererState(
   override def notaReferenciadaRPrStyle = constants.rprStyles.get(RE_NotaReferenciada)
   
   override def endnoteId(origId : String) : String = 
-    endnoteIdMap(origId)      
+    endnoteIdMap(origId)
+    
+  override def skipHyperlink = constants.skipHyperlink
 }
 
 object RendererState {
@@ -336,12 +340,22 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       _ <- modifyPState(_.setBase(oldBase))      
     } yield (())
   
-  def remissao(r : Remissao) : RunRenderer[Unit] = for {
+  def remissao(r : Remissao) : RunRenderer[Unit] = /* for {
       base <- inspectPState(_.getBase) 
       href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
       hd <- modifyPStateV(_.addRef(href))
       rPr <- inspectPState(_.getHyperlinkRPr)
       _ <- withStyleRunRenderer(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))      
+    } yield (()) */ for {
+      sh <- inspectPState(_.skipHyperlink)
+      _ <- 
+        if (sh) { for {
+          base <- inspectPState(_.getBase) 
+          href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
+          hd <- modifyPStateV(_.addRef(href))
+          rPr <- inspectPState(_.getHyperlinkRPr)
+          _ <- withStyleRunRenderer(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))  
+        } yield (()) } else { inlineSeq(r.inlineSeq) } 
     } yield (())
   
   def articulacao(a : Articulacao) : ParRenderer[Unit] =
