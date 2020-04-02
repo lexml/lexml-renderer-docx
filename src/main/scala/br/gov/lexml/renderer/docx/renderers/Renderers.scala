@@ -316,7 +316,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
               inlineSeq(x.inlineSeq)
               )))                  
         } yield (())
-      } >>  mapM_(ag.elems)(hierarchicalElement)
+      } .flatMap { _ =>  mapM_(ag.elems)(hierarchicalElement) }
   
   
   def agrupador(ag : Agrupador) : ParRenderer[Unit] = ag match {
@@ -482,7 +482,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   } yield (())
   
   def inLang[A](lang : String)(rr : RunRenderer[A]) : RunRenderer[A] = {
-     modifyPState(_.addUnsupported("inLang: não suportado",lang)) >> rr       
+     modifyPState(_.addUnsupported("inLang: não suportado",lang)) .flatMap(_ => rr)       
   }
   
   def projetoNorma(pj : ProjetoNorma) : ParRenderer[Unit] = norma(pj.norma)
@@ -635,7 +635,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       rendPar = (p : InlineSeq) => 
         parM(contentPPr)(withStyleRunRenderer(contentRPr)(inlineSeq(p)))
       tail1 = mapM_(tail)(rendPar)
-      firstPart = head >> mapM_(tail)(rendPar)          
+      firstPart = head.flatMap { _ => mapM_(tail)(rendPar) }          
       _ <- firstPart
       _ <- d.alteracao.ifDef(alteracao)
       _ <- mapM_(d.containers){x => lxContainer(x,false) }       
@@ -667,11 +667,11 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
         runM_(rPrArtigoUnico)(text(r.rotulo))
       case _ => r.rotulo.trim match {
         case rotuloArtigoPattern(label,num) =>
-          runM_(rPrLabelRotuloArtigo)(text(label + " ")) >>
-          runM_(rPrNumRotuloArtigo)(text(num + " "))
+          runM_(rPrLabelRotuloArtigo)(text(label + " ")) .flatMap (_ =>
+          runM_(rPrNumRotuloArtigo)(text(num + " ")))
         case _ =>
-          modifyPState(_.addUnsupported("rótulo de artigo",r)) >>
-          runM_(rPrNumRotuloArtigo)(text(r.rotulo))
+          modifyPState(_.addUnsupported("rótulo de artigo",r)).flatMap (_ =>
+          runM_(rPrNumRotuloArtigo)(text(r.rotulo)))
       }
     }    
   }
@@ -830,7 +830,8 @@ class WordMarker(regex : String, change : RPr => RPr) {
               val tl = if(t1.charAt(0).isWhitespace && last > 0) {
                 tb += T(" ",preserveSpace=true)                
               }
-              tb += T(t1.trim)             
+              val t2 = t1.replaceAll("\\p{Space}+$","")
+              tb += T(t2)             
               if(mayAddWSatEnd && t1.last.isWhitespace) {
                 tb += T(" ",preserveSpace=true)
               }

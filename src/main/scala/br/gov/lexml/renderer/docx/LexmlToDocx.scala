@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import br.gov.lexml.doc.xml.XmlConverter
 import br.gov.lexml.schema.scala.LexmlSchema
 import org.apache.commons.codec.digest.DigestUtils
+import scala.language.existentials
 
 final case class LexmlToDocxConfig(
     val referenceDocx : Array[Byte],
