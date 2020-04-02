@@ -19,6 +19,7 @@ import br.gov.lexml.doc.xml.XmlConverter.SomeLexmlDocument
 import scala.language.existentials
 
 
+
 trait ParRendererState[T <: ParRendererState[T]] {
   def getBase : Option[URI]
   def setBase(base : Option[URI]) : T 
@@ -805,6 +806,16 @@ class WordMarker(regex : String, change : RPr => RPr) {
     case x => Seq(x)
   }
   
+  def trimLeft(rc : RunContent) : RunContent = rc match {
+    case t : T => t.copy(text = t.text.replaceAll("^\\p{Space}+",""))
+    case x => x
+  }
+
+  def hasTrailingSpace(rc : RunContent) : Boolean = rc match {
+    case t : T => t.text.matches("\\p{Space}$")
+    case x => false
+  }
+
   def fParElementContainer(before : Option[ParElement],x : ParElement, next: Option[ParElement]) : Seq[ParElement]  = x match {
     case x : R => {
       val l : Seq[Either[(T,Seq[(Int,Int)]),RunContent]] = x.contents.collect {
@@ -815,26 +826,44 @@ class WordMarker(regex : String, change : RPr => RPr) {
           else { Left(t,matches) }              
         case t => Right(t)
       }
+      var lastHadSpace : Boolean = false
       val pl : Seq[ParElement] = l.flatMap { 
-        case Right(t) => Seq(x.copy(contents = Seq(t)))
+        case Right(t) =>
+          val t1 = if(lastHadSpace) { trimLeft(t) } else { t }
+          lastHadSpace = hasTrailingSpace(t1)
+          Seq(x.copy(contents = Seq(t1)))
         case Left((t,matches)) => {          
+          //DEBUG: start
+          val doDebug = false //t.text.startsWith("regimento interno")
+          def debug(msg : => String) = if (doDebug) { println("fParElementContainer: " + msg) } else { }
+          //DEBUG: end
+
+          debug(s"""t = ${t}, matches=${matches}, next = ${next}""")
           val b = Seq.newBuilder[R]
           var last : Int = 0
           lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))          
           def passthrough(start : Int) {
+            debug(s"""passthrough: start = ${start}, next = ${next}""")
             val mayAddWSatEnd = start < t.text.length ||
                                 next.isDefined
             if(start > last) {              
               val t1 = t.text.substring(last,start)
               val tb = Seq.newBuilder[T]
-              val tl = if(t1.charAt(0).isWhitespace && last > 0) {
+              /*val tl = if(t1.charAt(0).isWhitespace && last > 0) {
                 tb += T(" ",preserveSpace=true)                
-              }
-              val t2 = t1.replaceAll("\\p{Space}+$","")
-              tb += T(t2)             
-              if(mayAddWSatEnd && t1.last.isWhitespace) {
+              }*/
+              val t2 = t1.replaceAll("\\p{Space}+$"," ")
+                         .replaceAll(" +"," ")
+              debug(s"""t2 = "${t2}" """)
+              val t3 = if(lastHadSpace) { t2.replaceAll("^\\p{Space}+","") } else { t2 }
+              val t4 = if(mayAddWSatEnd) { t3 } else { t3.replaceAll("\\p{Space}$","") }
+              tb += T(t4, preserveSpace=true)
+              lastHadSpace = t4.matches("\\p{Space}$")
+              debug(s"""t4="${t4}" """)
+              /*if(mayAddWSatEnd && t2.last.isWhitespace) {
                 tb += T(" ",preserveSpace=true)
-              }
+                t
+              }*/
               b += x.copy(contents = tb.result())
             }
           }
@@ -842,7 +871,8 @@ class WordMarker(regex : String, change : RPr => RPr) {
             (start,end) <- matches
           } {
             passthrough(start)            
-            b += R(rPr = newRPr,contents = Seq(T(t.text.substring(start,end))))
+            val mid = t.text.substring(start,end)
+            b += R(rPr = newRPr,contents = Seq(T(mid)))
             last = end
           }
           passthrough(t.text.length)
@@ -890,7 +920,7 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
       val contents = contentsM.makeDocxCompSeq(st0).value._1
       val contents1 = reformatRules.foldLeft(contents) { case (d,(regex,change)) =>
         d.flatMap { x => new WordMarker(regex,change)(x) }
-      } 
+      }
       (seq.toString,contents1)
     }
     val idToSeq = notas.collect { 
@@ -928,8 +958,6 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
     val d2 = reformatRules.foldLeft(d1) { case (d,(regex,change)) =>
       new WordMarker(regex,change)(d)
     }
-    
-    
     
     val docx = baseDocx.copy(mainDoc = d2, hyperlinks = st1.hrefToHrefData.values.to[Seq],
         endnotes = endnotes)
