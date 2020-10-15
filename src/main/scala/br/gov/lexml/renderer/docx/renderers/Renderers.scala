@@ -578,8 +578,39 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     case a : Artigo => artigo(a)
   }
 
-  def dispositivoGenerico(dg : DispositivoGenerico, skipFirst : Boolean) : ParRenderer[Unit] =
-      modifyMDState(_.addUnsupported("dispositivoGenerico: não suportado",dg))
+  def dispositivoGenerico(d : DispositivoGenerico, skipFirst : Boolean) : ParRenderer[Unit] =
+    aspasP(d.abreAspas,d.fechaAspas,d.notaAlteracao) {
+    for {
+      rotuloRPr <- rPrRotuloForDispositivo(TDP_Pena,d.rotulo)
+      contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(TDP_Pena))
+      contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(TDP_Pena))
+      (firstInlineSeq ,restInlineSeqs)  = (d.conteudo match {
+          case None => (State.pure(()),List())
+          case Some(t : TextoDispositivo) => (
+              t.inlineSeqs.map(_.inlineSeq).headOption.ifDef(x => withStyleRunRenderer(contentRPr)(inlineSeq(x))),
+              t.inlineSeqs.tail.map(_.inlineSeq).to[List])
+          case Some(OmissisSimples) => (
+              omissis,
+              List())      
+        }) : (RunRenderer[Unit], Seq[InlineSeq])
+      (head,tail) /* : (ParRenderer[Unit],Seq[InlineSeq]) */ = (if(!skipFirst) {        
+        val r1 = d.rotulo.ifDef(x => rotulo(x,rotuloRPr,true))
+        val c1 = firstInlineSeq
+        val l1 = parM(contentPPr)(r1 >> c1)
+        (l1,restInlineSeqs)
+      } else {
+        (State.pure(()),restInlineSeqs)
+      }) : (ParRenderer[Unit],Seq[InlineSeq])
+      rendPar = (p : InlineSeq) => 
+        parM(contentPPr)(withStyleRunRenderer(contentRPr)(inlineSeq(p)))
+      tail1 = mapM_(tail)(rendPar)
+      firstPart = head.flatMap { _ => mapM_(tail)(rendPar) }          
+      _ <- firstPart
+      _ <- d.alteracao.ifDef(alteracao)
+      _ <- mapM_(d.containers){x => lxContainer(x,false) }       
+    } yield (())
+  }
+  //    modifyMDState(_.addUnsupported("dispositivoGenerico: não suportado",dg))
   
   def anchor(a : Anchor) :  RunRenderer[Unit] =
     modifyPState(_.addUnsupported("anchor: não suportado: ",a))
