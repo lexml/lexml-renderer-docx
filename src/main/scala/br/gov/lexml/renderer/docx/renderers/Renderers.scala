@@ -69,12 +69,12 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
 
 
 abstract sealed class RenderElement(superClasses_ : RenderElement*) extends Product {
-  val superClasses : Set[RenderElement] = if (superClasses_.isEmpty) { Set(RE_Any) } else { superClasses_.to[Set] }
+  val superClasses : Set[RenderElement] = if (superClasses_.isEmpty) { Set(RE_Any) } else { superClasses_.to(Set) }
   def apply[T](m : Map[RenderElement,T]) : Option[T] =
     get(m).headOption.map(_._2)    
   final def get[T](m : Map[RenderElement,T]) : IndexedSeq[(Int,T)] = 
-    m.get(this).map(x => (0,x)).to[IndexedSeq] ++
-    superClasses.to[IndexedSeq].flatMap(_.get(m)).map(x => (x._1 + 1, x._2)).sortBy(_._1)
+    m.get(this).map(x => (0,x)).to(IndexedSeq) ++
+    superClasses.to(IndexedSeq).flatMap(_.get(m)).map(x => (x._1 + 1, x._2)).sortBy(_._1)
 }
   
 
@@ -588,7 +588,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
           case None => (State.pure(()),List())
           case Some(t : TextoDispositivo) => (
               t.inlineSeqs.map(_.inlineSeq).headOption.ifDef(x => withStyleRunRenderer(contentRPr)(inlineSeq(x))),
-              t.inlineSeqs.tail.map(_.inlineSeq).to[List])
+              t.inlineSeqs.tail.map(_.inlineSeq).to(List))
           case Some(OmissisSimples) => (
               omissis,
               List())      
@@ -651,7 +651,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
           case None => (State.pure(()),List())
           case Some(t : TextoDispositivo) => (
               t.inlineSeqs.map(_.inlineSeq).headOption.ifDef(x => withStyleRunRenderer(contentRPr)(inlineSeq(x))),
-              t.inlineSeqs.tail.map(_.inlineSeq).to[List])
+              t.inlineSeqs.tail.map(_.inlineSeq).to(List))
           case Some(OmissisSimples) => (
               omissis,
               List())      
@@ -851,7 +851,7 @@ class WordMarker(regex : String, change : RPr => RPr) {
     case x : R => {
       val l : Seq[Either[(T,Seq[(Int,Int)]),RunContent]] = x.contents.collect {
         case t : T =>
-          val matches = exprRe.findAllMatchIn(t.text).to[Seq].map { m =>
+          val matches = exprRe.findAllMatchIn(t.text).to(Seq).map { m =>
               (m.start,m.end) }
           if(matches.isEmpty) { Right(t) }
           else { Left(t,matches) }              
@@ -938,12 +938,12 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
   val st0 = RendererState(constants = constants, endnoteIdMap = Map("aaa" -> "bbb"))
     
   val reformatRules : Seq[(String,RPr => RPr)] = Seq(
-      WordMarker.makeOr(constants.expressoesEmBold.to[Seq]) -> WordMarker.AddBold
+      WordMarker.makeOr(constants.expressoesEmBold.to(Seq)) -> WordMarker.AddBold
       )
 
   def makeEndnotes(doc : SomeLexmlDocument, notas : Seq[(Int,Option[String],Nota)]) : 
     (Seq[(String,Seq[DocxTextComponent])],Seq[String],Map[String,String]) = {
-    val orphans = notas.collect { case (seq,None,_) => seq.toString }.to[Seq]    
+    val orphans = notas.collect { case (seq,None,_) => seq.toString }.to(Seq)    
     val endnotes = notas.map { case (seq,_,nota) =>      
       val contentsM = for {
         _ <- mapM_(nota.contents)(Renderers.paragraph)
@@ -990,7 +990,7 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
       new WordMarker(regex,change)(d)
     }
     
-    val docx = baseDocx.copy(mainDoc = d2, hyperlinks = st1.hrefToHrefData.values.to[Seq],
+    val docx = baseDocx.copy(mainDoc = d2, hyperlinks = st1.hrefToHrefData.values.to(Seq),
         endnotes = endnotes)
     MainDocRendererResult(
         docx=docx,        
@@ -1038,9 +1038,9 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
         val l1 = l.map(_._2)
         val f = l1.foldLeft((x => x) : ReplaceFunc) { case(sofar,f) => { x => sofar(f(x)) } }
         f
-      }
+      }.toMap
     
-      transf.toMap
+    //transf.toMap
     val bos = new ByteArrayOutputStream()
     val zos = new ZipOutputStream(bos)
     val m1 = referenceEntries ++ m.flatMap{ case (k,f) =>
@@ -1077,7 +1077,7 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     }        
     def subst(v : Array[Byte]) : ReplaceFunc = _ => Some(v)
     val files = res.docx.files
-    val replaceFuncs = files.mapValues { subst }.to[Seq]  ++ extraReplace
+    val replaceFuncs = files.mapValues { subst }.to(Seq)  ++ extraReplace
     writeReplace(replaceFuncs :_*)
   }
 }

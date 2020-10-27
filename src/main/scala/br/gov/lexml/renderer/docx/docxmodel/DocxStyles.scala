@@ -155,7 +155,7 @@ final case class Style(
 			    <w:aliases w:val={aliases.mkString(",")}/>
 			  }
 			}			
-			{ fields.values.to[IndexedSeq].sortBy(_.ft.pos).map(_.asXML) }
+			{ fields.values.to(IndexedSeq).sortBy(_.ft.pos).map(_.asXML) }
 			{ pPr.onSome(_.asXML) }
 			{ rPr.onSome(_.asXML) }
 			</w:style>
@@ -216,7 +216,7 @@ final case class Styles(
 			</w:styles>
       )
   def completeWith(base : Styles) : Styles = {
-    val alreadyDefined = styles.flatMap(_.name).to[Set]
+    val alreadyDefined = styles.flatMap(_.name).to(Set)
     val missing = base.styles.filter(s => s.name.isDefined && !alreadyDefined.contains(s.name.get))
     copy(styles = styles ++ missing)
   }

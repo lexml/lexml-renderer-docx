@@ -69,7 +69,7 @@ def trimP(p : P) : P = {
   }
   val text = sb.toString
   val matches: ArrayStack[(Int,Int)] =
-    trimRe.findAllMatchIn(text).to[ArrayStack].
+    trimRe.findAllMatchIn(text).to(ArrayStack).
       map(m => (m.start,m.end - m.start))
   val cb = Seq.newBuilder[(T,Int,Int)]
   while(!matches.isEmpty) {
@@ -84,7 +84,7 @@ def trimP(p : P) : P = {
     cb += ((t,p1,l1))
   }
   val cuts = cb.result().groupBy(_._1).mapValues(_.map(x => (x._2,x._3)))
-    .map { case (k,v) => (new WrapEq(k),v)}
+    .map { case (k,v) => (new WrapEq(k),v)}.toMap
   val rewriteRule = rule[Any] {
     case t : T if cuts.contains(new WrapEq(t)) =>
       t.copy(text = cutString(t.text,cuts(new WrapEq(t)) : _*))
@@ -97,7 +97,7 @@ def trimP(p : P) : P = {
 
 def cutString(txt : String, cuts : (Int,Int)*) : String = {
   val txt1=txt.replaceAll("\\s"," ")
-  cuts.to[IndexedSeq].sortBy(_._1).reverse.foldLeft(txt1) { case (t,(pos,len)) =>
+  cuts.to(IndexedSeq).sortBy(_._1).reverse.foldLeft(txt1) { case (t,(pos,len)) =>
     t.substring(0,pos) + t.substring(pos + len)
   }
 }

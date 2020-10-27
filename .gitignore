@@ -6,3 +6,5 @@ target/
 /.cache-tests
 .factorypath
 src/main/resources/docx/t
+/.idea/
+/**/*.iml

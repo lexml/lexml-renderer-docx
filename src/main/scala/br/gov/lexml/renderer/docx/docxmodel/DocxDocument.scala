@@ -128,7 +128,7 @@ object Relationships {
     }
     val root = XML.load(new java.io.ByteArrayInputStream(data))
     
-    val rels = (root \\ "Relationship").to[Seq].collect {
+    val rels = (root \\ "Relationship").to(Seq).collect {
       case e : Elem =>        
         rel(e.attribute("Id").get.head.text,
          e.attribute("Target").get.head.text,

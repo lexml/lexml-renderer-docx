@@ -26,7 +26,7 @@ object TestRendererV4  extends App {
       f != null && f.getName().endsWith(".xml")
       
   val limit = 5000
-  val files = files1.filter(file_filter).to[Seq].take(limit)         
+  val files = files1.filter(file_filter).to(Seq).take(limit)         
  
   val destDir = new File("/tmp/test/results")
   try { destDir.mkdirs() } catch { case _ : Exception => }
