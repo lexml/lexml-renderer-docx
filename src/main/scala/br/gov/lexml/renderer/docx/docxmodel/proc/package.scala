@@ -81,8 +81,8 @@ def trimP(p : P) : P = {
   val text = sb.toString
   import scala.collection.mutable.Stack
   val matches: Stack[(Int,Int)] =
-    trimRe.findAllMatchIn(text).to(Vector).
-      map(m => (m.start,m.end - m.start))
+    trimRe.findAllMatchIn(text).
+      map(m => (m.start,m.end - m.start)).to(Stack)
   val cb = Vector.newBuilder[(WrapEq[T],Int,Int)]
   cb.sizeHint(matches.length)
   while(!matches.isEmpty) {
