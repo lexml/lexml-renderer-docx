@@ -11,7 +11,7 @@ import org.apache.commons.io.IOUtils
 import br.gov.lexml.doc._
 import br.gov.lexml.renderer.docx.renderers.PackageRenderer
 
-object TestRendererV4  extends App {  
+object TestRendererV4  extends App {
   import java.io.File
   import scala.collection.JavaConverters._
   
