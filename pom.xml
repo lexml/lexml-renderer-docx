@@ -10,12 +10,7 @@
 	<properties>
 		<scala.version>2.13</scala.version>
 		<scala.lib.version>${scala.version}.2</scala.lib.version>
-
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-		<!-- github server corresponds to entry in ~/.m2/settings.xml -->
-		<github.global.server>github</github.global.server>
-
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>
 
@@ -27,10 +22,10 @@
 	</scm>
 
     <licenses>
-	    <license>
-		    <name>GPLv2</name>
+	<license>
+            <name>GPLv2</name>
             <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
-	    </license>
+	</license>
     </licenses>
  
     <developers>
@@ -113,7 +108,7 @@
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-doc-model</artifactId>
-			<version>1.0.10</version>
+			<version>1.0.12</version>
 		</dependency>
 
 		<dependency>
