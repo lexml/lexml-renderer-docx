@@ -42,9 +42,7 @@ val peTexts : ParElement => Seq[T] = attr {
 
 private val trimRe = """(^\s+)|(\s+$)|((?<=\S\s)\s+(?=\S))|(\s+(?=[,;.!?]))|((?<=\()\s+|\s+(?=\)))|((?<=“)\s+)|(\s+(?=”))""".r
 
-  
-
-protected[proc] class WrapEq[A](x : A) {
+protected[proc] class WrapEq[A](val x : A) {
   private val _hashCode = System.identityHashCode(x)
   override def hashCode() = _hashCode
 
@@ -92,7 +90,7 @@ def trimP(p : P) : P = {
     val l1 = math.min(length,t.text.length-p1)
     val l2 = length - l1
     if(l2 > 0) {
-      matches.push((l1,l2))
+      matches.push((l2,l1))
     }
     cb += ((wrapEq(t),p1,l1))
   }
