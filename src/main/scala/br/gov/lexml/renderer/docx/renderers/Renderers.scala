@@ -667,7 +667,10 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       rendPar = (p : InlineSeq) => 
         parM(contentPPr)(withStyleRunRenderer(contentRPr)(inlineSeq(p)))
       tail1 = mapM_(tail)(rendPar)
-      firstPart = head.flatMap { _ => mapM_(tail)(rendPar) }          
+      firstPart = head.flatMap { _ => mapM_(tail)(rendPar) }
+      tituloPPr <- inspectMDState(_.tituloStylePPrForDispositivo(TDP_Artigo/*d.tipoDispositivo*/))
+      tituloRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(TDP_Artigo/*d.tipoDispositivo*/))
+      _ <- d.titulo.ifDef(t => parM(tituloPPr)(withStyleRunRenderer(tituloRPr)(inlineSeq(t.inlineSeq))))
       _ <- firstPart
       _ <- d.alteracao.ifDef(alteracao)
       _ <- mapM_(d.containers){x => lxContainer(x,false) }       
