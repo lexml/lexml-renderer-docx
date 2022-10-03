@@ -265,6 +265,46 @@ final case class P(runs : Seq[ParElement] = Seq(),pPr : Option[PPr] = None) exte
   override val parElements = runs
 }
 
+final case class TblPr() extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+final case class GridCol() extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+
+final case class TblGrid(gridCols : Seq[GridCol] = Seq()) extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+final case class TR(trPr : Option[TrPr] = None,
+                    cols : Seq[TC] = Seq()) extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+
+final case class TrPr() extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+
+final case class TC(tcPr : Option[TcPr] = None, contents : Seq[DocxTextComponent]) extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+
+final case class TcPr() extends XmlComponent {
+  lazy val asXML : Elem = ???
+}
+
+final case class Table(tblPr : Option[TblPr] = None,
+                       tblGrid : Option[TblGrid] = None,
+                       rows : Seq[TR] = Seq()) extends DocxTextComponent with XmlComponent {
+  lazy val asXML =
+    <w:tbl>
+      {tblPr.elem(_.asXML)}
+      {tblGrid.elem(_.asXML)}
+      {rows.eachElem(_.asXML)}
+    </w:tbl>
+
+  override def isEmpty: Boolean = rows.isEmpty
+}
+
 sealed trait ParElement extends Product with XmlComponent {
   def isEmpty : Boolean = false
 }

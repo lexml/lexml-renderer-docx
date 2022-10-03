@@ -743,13 +743,18 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     _ <- mapM_(ldf.inlineSeqs)(x => parM(localDataFechoPPr)(withStyleRunRenderer(localDataFechoRPr)(inlineSeq(x.inlineSeq))))
   } yield (())
   
-  def assinatura(assinatura : Assinatura[_]) : ParRenderer[Unit] = assinatura match {
+  def assinatura(assinatura : ParteFinalAssinatura) : ParRenderer[Unit] = assinatura match {
+    case x: ElementoAssinaturaGrupo => elementoAssinaturaGrupo(x)
+    case ag: AssinaturaGrupo => State.pure(())
+  }
+
+  def elementoAssinaturaGrupo(x : ElementoAssinaturaGrupo) : ParRenderer[Unit] = x match {
     case at : AssinaturaTexto => for {
       assinaturaTextoPPr <- inspectMDState(_.assinaturaTextoStylePPr)
       assinaturaTextoRPr <- inspectMDState(_.assinaturaTextoStyleRPr)
       _ <- mapM_(at.inlineSeqs)(x => parM(assinaturaTextoPPr)(withStyleRunRenderer(assinaturaTextoRPr)(inlineSeq(x.inlineSeq))))
-    } yield (())
-    case _ => State.pure(())
+    } yield ()
+    case ax : Assinatura => State.pure(())
   }
   
   def blockElement(b : BlockElement) : ParRenderer[Unit] = b match {    
