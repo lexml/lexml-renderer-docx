@@ -2,14 +2,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.gov.lexml</groupId>
 	<artifactId>lexml-renderer-docx</artifactId>
-	<version>1.0.32</version>
+	<version>1.0.34-SNAPSHOT</version>
 	<name>LexML DOCX renderer</name>
 	<description>Renders LexML Brazil XML files to DOCX format.</description>
 	<url>https://github.com/lexml/lexml-renderer-docx</url>
 
 	<properties>
 		<scala.version>2.13</scala.version>
-		<scala.lib.version>${scala.version}.2</scala.lib.version>
+		<scala.lib.version>${scala.version}.9</scala.lib.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>
@@ -18,7 +18,7 @@
 		<url>https://github.com/lexml/lexml-renderer-docx</url>
 		<developerConnection>scm:git:https://github.com/lexml/lexml-renderer-docx.git</developerConnection>
 		<connection>scm:git:https://github.com/lexml/lexml-renderer-docx.git</connection>
-		<tag>lexml-renderer-docx-1.0.32</tag>
+		<tag>HEAD</tag>
 	</scm>
 
     <licenses>
