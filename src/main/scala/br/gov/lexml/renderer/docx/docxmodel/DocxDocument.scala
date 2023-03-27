@@ -3,7 +3,9 @@ package br.gov.lexml.renderer.docx.docxmodel
 import scala.xml._
 import java.io._
 import org.apache.commons.io.IOUtils
+
 import scala.language.existentials
+import scala.reflect.runtime.universe.Type
 
 object XmlUtils {
   def xmlToByteArray(e : Elem) = {

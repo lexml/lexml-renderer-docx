@@ -64,7 +64,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>4.3.1</version>
+				<version>4.8.1</version>
 				<executions>
 					<execution>
 						<goals>
@@ -78,6 +78,11 @@
 					<fork>true</fork>
 					<scalaVersion>${scala.lib.version}</scalaVersion>
 					<scalaCompatVersion>${scala.lib.version}</scalaCompatVersion>
+					<args>
+						<arg>-deprecation</arg>
+						<arg>-feature</arg>
+					</args>
+
 					<jvmArgs>
 						<jvmArg>-Xms1024m</jvmArg>
 						<jvmArg>-Xmx4096m</jvmArg>

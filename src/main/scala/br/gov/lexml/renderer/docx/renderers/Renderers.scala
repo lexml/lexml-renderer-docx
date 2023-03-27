@@ -1,21 +1,18 @@
 package br.gov.lexml.renderer.docx.renderers
 
-import cats._
 import cats.implicits._
 import cats.data._
-import cats.instances.all._
-
 import br.gov.lexml.renderer.docx.docxmodel.builders._
 import br.gov.lexml.renderer.docx.docxmodel.builders.implicits._
 import br.gov.lexml.doc._
-import br.gov.lexml.renderer.docx.docxmodel._
+import br.gov.lexml.renderer.docx.docxmodel.{Table => DocxTable, _}
+
 import java.net.URI
-import br.gov.lexml.doc.xml.XmlConverter
-import br.gov.lexml.schema.scala.LexmlSchema
 import org.apache.commons.io.IOUtils
 import org.slf4j._
-import scala.util.matching.Regex
 import br.gov.lexml.doc.xml.XmlConverter.SomeLexmlDocument
+import br.gov.lexml.renderer.docx.LexmlToDocxConfig
+
 import scala.language.existentials
 
 
@@ -270,8 +267,9 @@ object RendererState {
   }
 }
 
-object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[RendererState] 
+class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState] with ParBuilderOps[RendererState]
   with DocxCompSeqBuilderOps[RendererState] {
+  val logger = LoggerFactory.getLogger("br.gov.lexml.renderer.docx.renderers")
   
   type RunRenderer[A] = PB[A] 
   
@@ -286,7 +284,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
   }
     
   
-  def omissis() : RunRenderer[Unit] = {    
+  def omissis : RunRenderer[Unit] = {
     runM_()(tab) 
   }
                 
@@ -295,7 +293,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     for {
       style <- inspectMDState(_.omissisParStyle)      
       _ <- parM(style)(omissis)
-    } yield (())
+    } yield ()
   }            
   
   def agrupadorGenerico(ag : AgrupadorGenerico) : ParRenderer[Unit] = 
@@ -316,7 +314,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
               withStyleRunRenderer(nomeAgrupadorRPrStyle)(
               inlineSeq(x.inlineSeq)
               )))                  
-        } yield (())
+        } yield ()
       } .flatMap { _ =>  mapM_(ag.elems)(hierarchicalElement) }
   
   
@@ -339,7 +337,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       _ <- modifyPState(_.setBase(newBase))
       _ <- inlineSeq(r.inlineSeq)
       _ <- modifyPState(_.setBase(oldBase))      
-    } yield (())
+    } yield ()
   
   def remissao(r : Remissao) : RunRenderer[Unit] = /* for {
       base <- inspectPState(_.getBase) 
@@ -350,14 +348,15 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     } yield (()) */ for {
       sh <- inspectPState(_.skipHyperlink)
       _ <- 
-        if (sh) { for {
+        if (!sh) { for {
           base <- inspectPState(_.getBase) 
           href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
-          hd <- modifyPStateV(_.addRef(href))
+          lexmlPortalLink = new java.net.URL(config.getLinkTemplate.format(href)).toURI
+          hd <- modifyPStateV(_.addRef(lexmlPortalLink))
           rPr <- inspectPState(_.getHyperlinkRPr)
           _ <- withStyleRunRenderer(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))  
-        } yield (()) } else { inlineSeq(r.inlineSeq) } 
-    } yield (())
+        } yield () } else { inlineSeq(r.inlineSeq) }
+    } yield ()
   
   def articulacao(a : Articulacao) : ParRenderer[Unit] =
       mapM_(a.elems)(hierarchicalElement)
@@ -465,7 +464,7 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
     _ <- runM(rPr)(text("("))
     _ <- runM(rPr)(endnoteReference(id))
     _ <- runM(rPr)(text(")"))
-  } yield (())
+  } yield ()
   
   def inlineSeq(il : InlineSeq) : RunRenderer[Unit] = {          
     val rr = mixed(il.mixedElems)
@@ -685,9 +684,10 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
       conteudo : Option[RunRenderer[Unit]]) : 
     ParRenderer[Unit] = {
     parM(pPr)( for {
-      _ <- r.ifDef{rot => rotulo(rot,rotuloRPr,true)}
-      _ <- conteudo.ifDef(x => x)
-    } yield (()))       
+        _ <- r.ifDef{rot => rotulo(rot,rotuloRPr,true)}
+        _ <- conteudo.ifDef(x => x)
+      } yield ()
+    )
   }  
   
   private val rotuloArtigoPattern = """(^[aA]rt\.)\s+(\S+)""".r
@@ -725,16 +725,17 @@ object Renderers extends RunBuilderOps[RendererState] with ParBuilderOps[Rendere
           case _ => (State.pure(()),false,false,None)
       }) : (RunRenderer[Unit],Boolean,Boolean,Option[String])    
     aspasP(a.abreAspas,a.fechaAspas,a.notaAlteracao)(for {      
-      rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(a.tipoDispositivo))
-      contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(a.tipoDispositivo))
-      contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(a.tipoDispositivo))
-      tituloArtigoPPr <- inspectMDState(_.tituloStylePPrForDispositivo(a.tipoDispositivo))
-      tituloArtigoRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(a.tipoDispositivo))      
-      _ <- a.titulo.ifDef(t => parM(tituloArtigoPPr)(withStyleRunRenderer(tituloArtigoRPr)(inlineSeq(t.inlineSeq))))
-      _ <- aspasP(false,contFechaAspas,contNotaAlteracao) { parM(contentPPr) { rotuloArt.flatMap(_ => conteudo.flatMap(_ => State.pure(()))) } }
-      _ <- a.containers.headOption.ifDef(x => lxContainer(x,skipFirst))
-      _ <- mapM_(a.containers.tail){x => lxContainer(x,false) }    
-    } yield (()))
+        rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(a.tipoDispositivo))
+        contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(a.tipoDispositivo))
+        contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(a.tipoDispositivo))
+        tituloArtigoPPr <- inspectMDState(_.tituloStylePPrForDispositivo(a.tipoDispositivo))
+        tituloArtigoRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(a.tipoDispositivo))
+        _ <- a.titulo.ifDef(t => parM(tituloArtigoPPr)(withStyleRunRenderer(tituloArtigoRPr)(inlineSeq(t.inlineSeq))))
+        _ <- aspasP(false,contFechaAspas,contNotaAlteracao) { parM(contentPPr) { rotuloArt.flatMap(_ => conteudo.flatMap(_ => State.pure(()))) } }
+        _ <- a.containers.headOption.ifDef(x => lxContainer(x,skipFirst))
+        _ <- mapM_(a.containers.tail){x => lxContainer(x,false) }
+      } yield ()
+    )
   }
   
   def localDataFecho(ldf : LocalDataFecho) : ParRenderer[Unit] = for {
@@ -880,8 +881,8 @@ class WordMarker(regex : String, change : RPr => RPr) {
           debug(s"""t = ${t}, matches=${matches}, next = ${next}""")
           val b = Seq.newBuilder[R]
           var last : Int = 0
-          lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))          
-          def passthrough(start : Int) {
+          lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))
+          def passthrough(start : Int) : Unit = {
             debug(s"""passthrough: start = ${start}, next = ${next}""")
             val mayAddWSatEnd = start < t.text.length ||
                                 next.isDefined
@@ -941,7 +942,8 @@ object WordMarker {
   val AddBold : RPr => RPr = _.copy(bold = Some(true))                 
 }
 
-final case class MainDocRenderer(constants : Constants = Constants(), baseDocx : Docx = Docx()) {
+final case class MainDocRenderer(constants : Constants = Constants(), baseDocx : Docx = Docx(),
+                                 config : LexmlToDocxConfig) {
   
   val st0 = RendererState(constants = constants, endnoteIdMap = Map("aaa" -> "bbb"))
     
@@ -949,13 +951,14 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
       WordMarker.makeOr(constants.expressoesEmBold.to(Seq)) -> WordMarker.AddBold
       )
 
+  val renderers = new Renderers(config)
   def makeEndnotes(doc : SomeLexmlDocument, notas : Seq[(Int,Option[String],Nota)]) : 
     (Seq[(String,Seq[DocxTextComponent])],Seq[String],Map[String,String]) = {
     val orphans = notas.collect { case (seq,None,_) => seq.toString }.to(Seq)    
     val endnotes = notas.map { case (seq,_,nota) =>      
       val contentsM = for {
-        _ <- mapM_(nota.contents)(Renderers.paragraph)
-      } yield (()) 
+        _ <- mapM_(nota.contents)(renderers.paragraph)
+      } yield ()
       val contents = contentsM.makeDocxCompSeq(st0).value._1
       val contents1 = reformatRules.foldLeft(contents) { case (d,(regex,change)) =>
         d.flatMap { x => new WordMarker(regex,change)(x) }
@@ -992,7 +995,7 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
     
     val st0_1 = st0.copy(endnoteIdMap = idToSeq)
 
-    val (d,st1) = Renderers.lexmlDocument(doc1).makeMainDoc(st0_1).value
+    val (d,st1) = renderers.lexmlDocument(doc1).makeMainDoc(st0_1).value
     val d1 = d.copy(d.contents.filterNot(_.isEmpty))           
     val d2 = reformatRules.foldLeft(d1) { case (d,(regex,change)) =>
       new WordMarker(regex,change)(d)
@@ -1019,13 +1022,14 @@ object PackageRenderer {
   }
 }
 
-class PackageRenderer(referenceDocx : Array[Byte]) {
+class PackageRenderer(config : LexmlToDocxConfig) {
+
   import PackageRenderer._  
   
   private lazy val referenceEntries = {
     import java.io._
     import java.util.zip._
-    val zis = new ZipInputStream(new ByteArrayInputStream(referenceDocx))
+    val zis = new ZipInputStream(new ByteArrayInputStream(config.referenceDocx))
     val b = Map.newBuilder[String,Array[Byte]]
     var ze : ZipEntry = zis.getNextEntry()
     while(ze != null) {
@@ -1042,7 +1046,7 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
     import java.io._
     import java.util.zip._
     val m : Map[String,ReplaceFunc] =
-      transf.groupBy(_._1).mapValues { l =>
+      transf.groupBy(_._1).view.mapValues { l =>
         val l1 = l.map(_._2)
         val f = l1.foldLeft((x => x) : ReplaceFunc) { case(sofar,f) => { x => sofar(f(x)) } }
         f
@@ -1061,7 +1065,7 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
       zos.closeEntry()
     }
     zos.close()        
-    bos.toByteArray()
+    bos.toByteArray
   }
   
   
@@ -1078,14 +1082,14 @@ class PackageRenderer(referenceDocx : Array[Byte]) {
         )    
         
         
-    val renderer = new MainDocRenderer(Constants.default,baseDocx)
+    val renderer = new MainDocRenderer(Constants.default,baseDocx,config)
     val res = renderer.render(doc)
     res.unsupportedCases.foreach { case (msg,x) =>
       logger.warn("Caso não suportado pelo renderer: " + msg + "\n" + x.toString)       
     }        
     def subst(v : Array[Byte]) : ReplaceFunc = _ => Some(v)
     val files = res.docx.files
-    val replaceFuncs = files.mapValues { subst }.to(Seq)  ++ extraReplace
+    val replaceFuncs = files.view.mapValues { subst }.to(Seq)  ++ extraReplace
     writeReplace(replaceFuncs :_*)
   }
 }

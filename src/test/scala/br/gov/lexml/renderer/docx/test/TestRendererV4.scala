@@ -1,20 +1,13 @@
 package br.gov.lexml.renderer.docx.test
 
 
-import br.gov.lexml.renderer.docx.docxmodel._
 import br.gov.lexml.renderer.docx._
 
-import br.gov.lexml.schema.scala._
 import org.apache.commons.io.FileUtils
-import br.gov.lexml.doc.xml.XmlConverter
-import org.apache.commons.io.IOUtils
-import br.gov.lexml.doc._
-import br.gov.lexml.renderer.docx.renderers.PackageRenderer
 
 object TestRendererV4  extends App {
   import java.io.File
-  import scala.collection.JavaConverters._
-  
+
   val lexmlToDocxConfig = LexmlToDocxConfig()
 
   val lexmlToDocx = new LexmlToDocx(lexmlToDocxConfig)

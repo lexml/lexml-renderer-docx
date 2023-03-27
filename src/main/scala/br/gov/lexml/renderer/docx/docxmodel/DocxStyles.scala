@@ -513,7 +513,7 @@ object DefaultStyles {
         
   val styles = Styles(
       docDefaults = Seq(docDefault),
-      styles=sb.result
+      styles=sb.result()
   )
   
   //LocalDataFecho
