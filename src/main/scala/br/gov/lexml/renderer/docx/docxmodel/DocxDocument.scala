@@ -386,7 +386,7 @@ case object US_WavyHeavy extends UnderlineStyle("wavyHeavy")
 case object US_Words extends UnderlineStyle("words")
 
 final case class UO_Underline(color : Option[RGB] = None) extends UnderlineOption {
-  val asXML = (<w:u w:val="true" w:color={color.map(_.value).getOrElse(null)}/>)
+  val asXML = (<w:u w:val="single" w:color={color.map(_.value).getOrElse(null)}/>)
 }
 
 abstract sealed class VertAlignment(val value : String) extends Product

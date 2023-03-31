@@ -502,14 +502,17 @@ object DefaultStyles {
   //Remissoes
   
   val linkRemissaoRPrStyle = makeRPrStyle(
-      "RemissaoCaracter","Remissão (caractere)")(RPr(
-       rStyle = Some(DefaultStyles.defaultCharStyle.id),
-       color = Some(RGB(0.2,0.2,0.2)
-   )))
+      "RemissaoCaracter","Remissão (caractere)")(
+        RPr(rStyle = Some(DefaultStyles.defaultCharStyle.id),
+            color = Some(RGB(0,0,0.8)),
+            underline = Some(UO_Underline(Some(RGB(0,0,0.8))))
+        )
+  )
   
-  val rprLinkRemissao = RPr(       
-       color = Some(RGB(0.2,0.2,0.2)
-   ))
+  val rprLinkRemissao = RPr(
+    color = Some(RGB(0, 0, 0.8)),
+    underline = Some(UO_Underline())
+  )
         
   val styles = Styles(
       docDefaults = Seq(docDefault),
