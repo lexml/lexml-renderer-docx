@@ -427,6 +427,7 @@ final case class RPr(
 {sz.elem(x => <w:sz w:val={x.toString}/>)}
 {szCs.elem(x => <w:szCs w:val={x.toString}/>)}
 {kern.elem(x => <w:kern w:val={x.toString}/>)}
+{vertAlign.elem(x => <w:vertAlign w:val={x.value}/>)}
 {underline.elem(_.asXML)}
 </w:rPr>
       )
@@ -451,12 +452,12 @@ final case class RPr(
 final case class R(
     rPr : Option[RPr] = None,
     contents : Seq[RunContent] = Seq()) extends ParElement with RunContentContainer[R] {
-  lazy val asXML = (
-<w:r>
-{rPr.onSome(_.asXML)}
-{contents.map(_.asXML)}
-</w:r>
-      )
+  lazy val asXML =
+      <w:r>
+      {rPr.onSome(_.asXML)}
+      {contents.map(_.asXML)}
+      </w:r>
+
   def insertFirst(els : RunContent*) = copy(contents = els ++ contents)
   def insertLast(els : RunContent*) = copy(contents = contents ++ els)
   override def isEmpty = contents.forall(_.isEmpty)

@@ -2,11 +2,7 @@ package br.gov.lexml.renderer.docx.docxmodel
 
 import scala.xml._
 
-import scala.reflect.runtime.universe._
-
 import scala.reflect.ClassTag
-
-import br.gov.lexml.renderer.docx.docxmodel.builders.implicits.RichOption1
 
 
 final case class StyleOptField[T](

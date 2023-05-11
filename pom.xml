@@ -9,7 +9,7 @@
 
 	<properties>
 		<scala.version>2.13</scala.version>
-		<scala.lib.version>${scala.version}.9</scala.lib.version>
+		<scala.lib.version>${scala.version}.10</scala.lib.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>

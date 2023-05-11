@@ -60,8 +60,7 @@ trait RunBuilderOps[T] {
       (pb : ParBuilderMonadStmt[T1])(implicit mo : Mergeable2[T,T1]) : RB[Unit] =
       enclosingRun(pb)(Ins(id,_,author,date))
 
-  
-  
+
   final def noBreakHyphen = putRC(NoBreakHyphen)
   
   final def sym(font : String, char : String) = putRC(Sym(font, char))
