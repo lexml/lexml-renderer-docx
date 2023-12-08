@@ -1,18 +1,17 @@
 package br.gov.lexml.renderer.docx.docxmodel.builders
 
-import cats.{implicits => catImplicits, _}
-import cats.data._
-import catImplicits._
-import br.gov.lexml.renderer.docx.docxmodel._
+import cats.{implicits => catImplicits, *}
+import cats.data.*
+import catImplicits.*
+import br.gov.lexml.renderer.docx.docxmodel.*
   
 final case class ParBuilderState[Q](
     contents : Seq[ParElement] = Seq(),
-    value : Q) extends Modifiable[Q,ParBuilderState[Q]] {
-  def setValue(x : Q) = copy(value = x)
-}
+    value : Q) extends Modifiable[Q,ParBuilderState[Q]]:
+  def setValue(x : Q): ParBuilderState[Q] = copy(value = x)
 
-trait ParBuilderOps[T] {  
-  import implicits._
+trait ParBuilderOps[T]:
+  import implicits.*
           
   final type PST = ParBuilderState[T]
   
@@ -40,15 +39,14 @@ trait ParBuilderOps[T] {
   }    
       
   final def runM[Q : Mergeable](rPr : Option[RPr] = None)(r : RunBuilderMonad[Q,Unit])(implicit mo : Mergeable2[T,Q]) 
-          : PB[Unit] = { 
+          : PB[Unit] =
     for {
       v0 <- getPState
       vv0 = mo.extract(v0)
       (run,v1) = r.makeRun(vv0,rPr).value
       _ <- putPE(run)
       _ <- mergePState(v1)
-    } yield (())
-  }
+    } yield ()
   
   final def hyperlink(anchor : Option[String] = None, 
         id : Option[String] = None, 
@@ -59,8 +57,4 @@ trait ParBuilderOps[T] {
     val st3 = st2.copy(contents = st0.contents :+ Hyperlink(st2.contents,anchor,id,tooltip))
     (st3,res)
   }
-  
-  
-}
-  
- 
+end ParBuilderOps

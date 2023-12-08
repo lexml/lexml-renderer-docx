@@ -1,19 +1,18 @@
 package br.gov.lexml.renderer.docx.docxmodel.builders
 
-import cats.{implicits => catImplicits, _}
-import cats.data._
-import catImplicits._
-import br.gov.lexml.renderer.docx.docxmodel._
+import cats.{implicits => catImplicits, *}
+import cats.data.*
+import catImplicits.*
+import br.gov.lexml.renderer.docx.docxmodel.*
 
   
 final case class RunBuilderState[Q](
     contents : Seq[RunContent] = Seq(),
-    value : Q) extends Modifiable[Q,RunBuilderState[Q]] {
-  def setValue(x : Q) = copy(value = x)
-}
+    value : Q) extends Modifiable[Q,RunBuilderState[Q]]:
+  def setValue(x : Q): RunBuilderState[Q] = copy(value = x)
 
-trait RunBuilderOps[T] {  
-  import implicits._    
+trait RunBuilderOps[T]:
+  import implicits.*
   
   final type RST = RunBuilderState[T]
   
@@ -27,21 +26,20 @@ trait RunBuilderOps[T] {
       (st.modify(x => mo.merge(x,st2.value)),(R(rPr = rPr,contents = runElems),v))        
   }
   
-  final def putRC(rc : RunContent*) : RB[Unit] = {
+  final def putRC(rc : RunContent*) : RB[Unit] =
     State.modify((x : RST) => x.copy(contents = x.contents ++ rc))
-  }
   
-  final def br = putRC(Br)
+  final def br: RB[Unit] = putRC(Br)
   
-  final def delText(text : String, preserveSpace : Boolean = false) =
+  final def delText(text : String, preserveSpace : Boolean = false): RB[Unit] =
     putRC(DelText(text, preserveSpace))
   
-  final def enclosingRun2(rb : RB[Unit],rPr : Option[RPr] = None)(f : R => RunContent)(implicit mo : Mergeable[T]) =
+  final def enclosingRun2(rb : RB[Unit],rPr : Option[RPr] = None)(f : R => RunContent)(implicit mo : Mergeable[T]): IndexedStateT[Eval, RunBuilderState[T], RunBuilderState[T], Unit] =
     subRun(rPr)(rb).flatMap { case (run,_) => putRC(f(run)) }
   
   final def enclosingRun[T1](
-      pb : ParBuilderMonad[T1,Unit])(f : Seq[ParElement] => RunContent)(implicit mo : Mergeable2[T,T1]) = 
-    State { st0 : RST =>
+      pb : ParBuilderMonad[T1,Unit])(f : Seq[ParElement] => RunContent)(implicit mo : Mergeable2[T,T1]): State[RunBuilderState[T], Unit] =
+    State { (st0 : RST) =>
       val pst0 = ParBuilderState[T1](value = mo.extract(st0.value))
       val (pst1,_) = pb.run(pst0).value
       val rc = f(pst1.contents)
@@ -61,25 +59,24 @@ trait RunBuilderOps[T] {
       enclosingRun(pb)(Ins(id,_,author,date))
 
 
-  final def noBreakHyphen = putRC(NoBreakHyphen)
+  final def noBreakHyphen: RB[Unit] = putRC(NoBreakHyphen)
   
-  final def sym(font : String, char : String) = putRC(Sym(font, char))
+  final def sym(font : String, char : String): RB[Unit] = putRC(Sym(font, char))
   
-  final def text(text : String, preserveSpace : Boolean = true) = {
+  final def text(text : String, preserveSpace : Boolean = true): RB[Unit] =
     putRC(T(text, preserveSpace))
-  }
   
-  final def tab = putRC(TAB)
+  final def tab: RB[Unit] = putRC(TAB)
   
   final def ptab(alignment : PTabAlignment,leader : Option[TabLeader] = None,
-            relativeTo : PTabBase) =
+            relativeTo : PTabBase): RB[Unit] =
      putRC(PTab(alignment,leader,relativeTo))
   
-  final def contentPart(id : String) = putRC(ContentPart(id))   
+  final def contentPart(id : String): RB[Unit] = putRC(ContentPart(id))
   
-  final def footnoteReference(id : String) = putRC(FootnoteReference(id))
+  final def footnoteReference(id : String): RB[Unit] = putRC(FootnoteReference(id))
   
-  final def endnoteReference(id : String) = putRC(EndnoteReference(id))
+  final def endnoteReference(id : String): RB[Unit] = putRC(EndnoteReference(id))
   
   final def getRState : RB[T] = State.inspect(_.value)
   
@@ -97,8 +94,5 @@ trait RunBuilderOps[T] {
   }    
     
   final def inspectRState[A](f : T => A) : RB[A] =
-      State.inspect(x => f(x.value))  
-  
-}
-  
- 
+      State.inspect(x => f(x.value))
+end RunBuilderOps

@@ -1,23 +1,23 @@
 package br.gov.lexml.renderer.docx.renderers
 
-import cats.implicits._
-import cats.data._
-import br.gov.lexml.renderer.docx.docxmodel.builders._
-import br.gov.lexml.renderer.docx.docxmodel.builders.implicits._
-import br.gov.lexml.doc._
-import br.gov.lexml.renderer.docx.docxmodel.{Table => DocxTable, _}
+import cats.implicits.*
+import cats.data.*
+import br.gov.lexml.renderer.docx.docxmodel.builders.*
+import br.gov.lexml.renderer.docx.docxmodel.builders.implicits.*
+import br.gov.lexml.doc.*
+import br.gov.lexml.renderer.docx.docxmodel.{Table as DocxTable, *}
 
 import java.net.URI
 import org.apache.commons.io.IOUtils
-import org.slf4j._
+import org.slf4j.*
 import br.gov.lexml.doc.xml.XmlConverter.SomeLexmlDocument
 import br.gov.lexml.renderer.docx.LexmlToDocxConfig
 
 import scala.language.existentials
+import scala.xml.Elem
 
 
-
-trait ParRendererState[T <: ParRendererState[T]] {
+trait ParRendererState[T <: ParRendererState[T]]:
   def getBase : Option[URI]
   def setBase(base : Option[URI]) : T 
   def addRef(href : URI) : (T,HrefData)
@@ -27,20 +27,18 @@ trait ParRendererState[T <: ParRendererState[T]] {
   def setCurrentRPrStyle(rPr : Option[RPr]) : T
   def endnoteId(origId : String) : String
   def skipHyperlink : Boolean
-}
 
-trait RunRendererState[T <: RunRendererState[T]] {
+trait RunRendererState[T <: RunRendererState[T]]:
   def currentRPrStyle : Option[RPr]
-}
 
-trait MainDocRendererState[T <: MainDocRendererState[T]] {  
+trait MainDocRendererState[T <: MainDocRendererState[T]]:
   def omissisParStyle : Option[PPr]
   def addUnsupported(msg : String, elem : Any) : T
-  def nomeAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
-  def rotuloAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) : Option[PPr]
-  def nomeAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) : Option[RPr]
-  def nomeAgrupadorPredefIniciaisMaiusc(tipo : TipoAgrupadorPredef) : Boolean
-  def rotuloAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) : Option[RPr]  
+  def nomeAgrupadorPredefPPrStyle(tipo : TAP) : Option[PPr]
+  def rotuloAgrupadorPredefPPrStyle(tipo : TAP) : Option[PPr]
+  def nomeAgrupadorPredefRPrStyle(tipo : TAP) : Option[RPr]
+  def nomeAgrupadorPredefIniciaisMaiusc(tipo : TAP) : Boolean
+  def rotuloAgrupadorPredefRPrStyle(tipo : TAP) : Option[RPr]
   def epigrafeParStyle : Option[PPr]
   def epigrafeCharStyle : Option[RPr]  
   def ementaParStyle : Option[PPr]
@@ -62,49 +60,41 @@ trait MainDocRendererState[T <: MainDocRendererState[T]] {
   def assinaturaTextoStylePPr : Option[PPr]
   def assinaturaTextoStyleRPr : Option[RPr]  
   def notaReferenciadaRPrStyle : Option[RPr]
-}
+end MainDocRendererState
 
+type RenderElement = RE
+enum RE(superClasses : RE*):
+  def apply[T](m: Map[RenderElement, T]): Option[T] =
+    get(m).headOption.map(_._2)
 
-abstract sealed class RenderElement(superClasses_ : RenderElement*) extends Product {
-  val superClasses : Set[RenderElement] = if (superClasses_.isEmpty) { Set(RE_Any) } else { superClasses_.to(Set) }
-  def apply[T](m : Map[RenderElement,T]) : Option[T] =
-    get(m).headOption.map(_._2)    
-  final def get[T](m : Map[RenderElement,T]) : IndexedSeq[(Int,T)] = 
-    m.get(this).map(x => (0,x)).to(IndexedSeq) ++
-    superClasses.to(IndexedSeq).flatMap(_.get(m)).map(x => (x._1 + 1, x._2)).sortBy(_._1)
-}
-  
+  final def get[T](m: Map[RenderElement, T]): IndexedSeq[(Int, T)] =
+    m.get(this).map(x => (0, x)).to(IndexedSeq) ++
+      superClasses.to(IndexedSeq).flatMap(_.get(m)).map(x => (x._1 + 1, x._2)).sortBy(_._1)
 
-case object RE_Any extends RenderElement(Seq() :_*) {
-  override val superClasses : Set[RenderElement] = Set()
-}
-case object RE_ParteInicial extends RenderElement
-case object RE_NomesAgrupador extends RenderElement
-case object RE_RotulosAgrupador extends RenderElement
-case object RE_Remissao extends RenderElement
-case object RE_Omissis extends RenderElement
-final case class RE_NomeAgrupador(t : TipoAgrupadorPredef) extends RenderElement(RE_NomesAgrupador)
-final case class RE_RotuloAgrupador(t : TipoAgrupadorPredef) extends RenderElement(RE_RotulosAgrupador)
-case object RE_Epigrafe extends RenderElement(RE_ParteInicial)
-case object RE_Ementa extends RenderElement(RE_ParteInicial)
-case object RE_Preambulo extends RenderElement(RE_ParteInicial)
-case object RE_FormulaPromulgacao extends RenderElement(RE_ParteInicial)
-case object RE_RotulosDispositivo extends RenderElement
-final case class RE_RotuloDispositivo(t : TipoDispositivo) extends RenderElement(RE_RotulosDispositivo)
-case object RE_ConteudosDispositivo extends RenderElement 
-final case class RE_ConteudoDispositivo(t : TipoDispositivo) extends RenderElement(RE_ConteudosDispositivo)
-case object RE_TitulosDispositivo extends RenderElement
-final case class RE_TituloDispositivo(t : TipoDispositivo) extends RenderElement(RE_TitulosDispositivo)
-case object RE_TextoAlteracao extends RenderElement
-case object RE_AbrevArtigo extends RenderElement(RE_RotulosDispositivo)
-case object RE_LocalDataFecho extends RenderElement
-case object RE_AssinaturaTexto extends RenderElement
-case object RE_NotaReferenciada extends RenderElement
+  case Any extends RE()
 
-object RenderElementMap {
-  
-}
-
+  case ParteInicial extends RE(Any)
+  case NomesAgrupador extends RE(Any)
+  case RotulosAgrupador extends RE(Any)
+  case Remissao extends RE(Any)
+  case Omissis extends RE(Any)
+  case NomeAgrupador(t: TAP) extends RE(NomesAgrupador)
+  case RotuloAgrupador(t: TAP) extends RE(RotulosAgrupador)
+  case Epigrafe extends RE(ParteInicial)
+  case Ementa extends RE(ParteInicial)
+  case Preambulo extends RE(ParteInicial)
+  case FormulaPromulgacao extends RE(RE.ParteInicial)
+  case RotulosDispositivo extends RE(Any)
+  case RotuloDispositivo(t: TipoDispositivo) extends RE(RotulosDispositivo)
+  case ConteudosDispositivo extends RE(Any)
+  case ConteudoDispositivo(t: TipoDispositivo) extends RE(ConteudosDispositivo)
+  case TitulosDispositivo extends RE(Any)
+  case TituloDispositivo(t: TipoDispositivo) extends RE(RE.TitulosDispositivo)
+  case TextoAlteracao extends RE(Any)
+  case AbrevArtigo extends RE(RotulosDispositivo)
+  case LocalDataFecho extends RE(Any)
+  case AssinaturaTexto extends RE(Any)
+  case NotaReferenciada extends RE(Any)
 
 final case class Constants(   
    hrefIdPrefix : String = "HrefId",
@@ -117,47 +107,46 @@ final case class Constants(
    skipHyperlink : Boolean = false
 )
 
-object Constants {
-  
-  lazy val default = Constants(
+object Constants:
+  lazy val default: Constants = Constants(
     pprStyles = Map(
-       RE_Ementa -> DefaultStyles.pprEmenta,    
-       RE_Epigrafe -> DefaultStyles.pprEpigrafe,                    
-       RE_Preambulo -> DefaultStyles.pprPreambulo,
-       RE_Omissis -> DefaultStyles.pprOmissis,
-       RE_NomesAgrupador -> DefaultStyles.pprNomeAgrupador,
-       RE_RotulosAgrupador -> DefaultStyles.pprRotuloAgrupador,
-       RE_Any -> DefaultStyles.pprAny,
-       RE_ConteudosDispositivo -> DefaultStyles.pprConteudoDispositivo,
-       RE_TitulosDispositivo -> DefaultStyles.pprTituloDispositivo,
-       RE_LocalDataFecho -> DefaultStyles.pprLocalDataFecho,
-       RE_AssinaturaTexto -> DefaultStyles.pprAssinaturaTexto,
-       RE_FormulaPromulgacao -> DefaultStyles.pprFormulaPromulgacao
+       RE.Ementa -> DefaultStyles.pprEmenta,
+       RE.Epigrafe -> DefaultStyles.pprEpigrafe,
+       RE.Preambulo -> DefaultStyles.pprPreambulo,
+       RE.Omissis -> DefaultStyles.pprOmissis,
+       RE.NomesAgrupador -> DefaultStyles.pprNomeAgrupador,
+       RE.RotulosAgrupador -> DefaultStyles.pprRotuloAgrupador,
+       RE.Any -> DefaultStyles.pprAny,
+       RE.ConteudosDispositivo -> DefaultStyles.pprConteudoDispositivo,
+       RE.TitulosDispositivo -> DefaultStyles.pprTituloDispositivo,
+       RE.LocalDataFecho -> DefaultStyles.pprLocalDataFecho,
+       RE.AssinaturaTexto -> DefaultStyles.pprAssinaturaTexto,
+       RE.FormulaPromulgacao -> DefaultStyles.pprFormulaPromulgacao
    ),
    rprStyles = Map(
-       //RE_TextoAlteracao -> RPr(),
-       //RE_Remissao -> RPr()
-       RE_NomesAgrupador -> DefaultStyles.rprNomeAgrupador,
-       RE_NomeAgrupador(TAP_Secao) -> DefaultStyles.rprSecaoSubsecao,
-       RE_NomeAgrupador(TAP_Subsecao) -> DefaultStyles.rprSecaoSubsecao,
-       RE_RotulosAgrupador -> DefaultStyles.rprRotuloAgrupador,
-       RE_RotuloAgrupador(TAP_Secao) -> DefaultStyles.rprRotuloSecaoSubsecao,
-       RE_RotuloAgrupador(TAP_Subsecao) -> DefaultStyles.rprRotuloSecaoSubsecao,       
-       RE_Ementa -> DefaultStyles.rprEmenta,
-       RE_Epigrafe -> DefaultStyles.rprEpigrafe,                    
-       RE_Preambulo -> DefaultStyles.rprPreambulo,
-       RE_Remissao -> DefaultStyles.rprLinkRemissao,
-       RE_TituloDispositivo(TDP_Artigo) -> DefaultStyles.rprTituloArtigo,
-       RE_LocalDataFecho -> DefaultStyles.rprLocalDataFecho,
-       RE_AssinaturaTexto -> DefaultStyles.rprAssinaturaTexto,
-       RE_FormulaPromulgacao -> DefaultStyles.rprFormulaPromulgacao,
-       RE_NotaReferenciada -> DefaultStyles.rprNotaReferenciada
+       //RE.TextoAlteracao -> RPr(),
+       //RE.Remissao -> RPr()
+       RE.NomesAgrupador -> DefaultStyles.rprNomeAgrupador,
+       RE.NomeAgrupador(TAP.Secao) -> DefaultStyles.rprSecaoSubsecao,
+       RE.NomeAgrupador(TAP.Subsecao) -> DefaultStyles.rprSecaoSubsecao,
+       RE.RotulosAgrupador -> DefaultStyles.rprRotuloAgrupador,
+       RE.RotuloAgrupador(TAP.Secao) -> DefaultStyles.rprRotuloSecaoSubsecao,
+       RE.RotuloAgrupador(TAP.Subsecao) -> DefaultStyles.rprRotuloSecaoSubsecao,
+       RE.Ementa -> DefaultStyles.rprEmenta,
+       RE.Epigrafe -> DefaultStyles.rprEpigrafe,
+       RE.Preambulo -> DefaultStyles.rprPreambulo,
+       RE.Remissao -> DefaultStyles.rprLinkRemissao,
+       RE.TituloDispositivo(TDP.Artigo) -> DefaultStyles.rprTituloArtigo,
+       RE.LocalDataFecho -> DefaultStyles.rprLocalDataFecho,
+       RE.AssinaturaTexto -> DefaultStyles.rprAssinaturaTexto,
+       RE.FormulaPromulgacao -> DefaultStyles.rprFormulaPromulgacao,
+       RE.NotaReferenciada -> DefaultStyles.rprNotaReferenciada
        ),                        
    indentAlteracao = DefaultStyles.indentAlteracao1,
    spacingAlteracao = DefaultStyles.spacingAlteracao1,
    iniciaisMaiusculas = Set(
-       RE_NomeAgrupador(TAP_Secao),
-       RE_NomeAgrupador(TAP_Subsecao)
+       RE.NomeAgrupador(TAP.Secao),
+       RE.NomeAgrupador(TAP.Subsecao)
        ),
    expressoesEmBold = Set[String](
       "(?i)caput",
@@ -173,8 +162,7 @@ object Constants {
           "^DECRETA: *$",
           "^Pre[âa]mbulo$")         
   )
-} 
-
+end Constants
 
 final case class RendererState(
     base : Option[URI] = None,
@@ -187,10 +175,10 @@ final case class RendererState(
     endnoteIdMap : Map[String,String] = Map()
     ) extends ParRendererState[RendererState] 
         with MainDocRendererState[RendererState] 
-        with RunRendererState[RendererState] {  
-  override def getBase = base
-  override def setBase(b : Option[URI]) = copy(base = b)
-  override def addRef(href : URI) = 
+        with RunRendererState[RendererState]:
+  override def getBase: Option[URI] = base
+  override def setBase(b : Option[URI]): RendererState = copy(base = b)
+  override def addRef(href : URI): (RendererState, HrefData) =
     hrefToHrefData.get(href) match {
       case Some(data) => (this,data)
       case None =>
@@ -199,61 +187,59 @@ final case class RendererState(
         val data = HrefData(href=href,id=id)
         (copy(hrefToHrefData = hrefToHrefData + (href -> data), hrefNext = hrefNext + 1),data)                
     }
-  
-  
-  def mapGetConsiderDefault[K,V](m : Map[K,V],k : K) : Option[V] = {
+
+  def mapGetConsiderDefault[K,V](m : Map[K,V],k : K) : Option[V] =
     m.get(k).orElse {
       try { Some(m(k)) } catch { case _ : Exception => None }
-    }                
-  }
+    }
   
-  override def getHyperlinkRPr : Option[RPr] = RE_Remissao(constants.rprStyles)
-  override def addUnsupported(msg : String, elem : Any) =
+  override def getHyperlinkRPr : Option[RPr] = RE.Remissao(constants.rprStyles)
+  override def addUnsupported(msg : String, elem : Any): RendererState =
     copy(unsupportedCases = unsupportedCases :+ ((msg,elem)))      
-  override def setCurrentRPrStyle(rPr : Option[RPr]) =
+  override def setCurrentRPrStyle(rPr : Option[RPr]): RendererState =
     copy(currentRPrStyle = rPr)
-  override def omissisParStyle = RE_Omissis(constants.pprStyles)
-  override def nomeAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
-    RE_NomeAgrupador(tipo)(constants.pprStyles)
-  override def rotuloAgrupadorPredefPPrStyle(tipo : TipoAgrupadorPredef) = 
-    RE_RotuloAgrupador(tipo)(constants.pprStyles)
-  override def nomeAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
-    RE_NomeAgrupador(tipo)(constants.rprStyles)
-  override def rotuloAgrupadorPredefRPrStyle(tipo : TipoAgrupadorPredef) = 
-    RE_RotuloAgrupador(tipo)(constants.rprStyles)  
+  override def omissisParStyle: Option[PPr] = RE.Omissis(constants.pprStyles)
+  override def nomeAgrupadorPredefPPrStyle(tipo : TAP): Option[PPr] =
+    RE.NomeAgrupador(tipo)(constants.pprStyles)
+  override def rotuloAgrupadorPredefPPrStyle(tipo : TAP): Option[PPr] =
+    RE.RotuloAgrupador(tipo)(constants.pprStyles)
+  override def nomeAgrupadorPredefRPrStyle(tipo : TAP): Option[RPr] =
+    RE.NomeAgrupador(tipo)(constants.rprStyles)
+  override def rotuloAgrupadorPredefRPrStyle(tipo : TAP): Option[RPr] =
+    RE.RotuloAgrupador(tipo)(constants.rprStyles)
     
-  override def epigrafeParStyle = constants.pprStyles.get(RE_Epigrafe)
-  override def epigrafeCharStyle = constants.rprStyles.get(RE_Epigrafe)
-  override def ementaParStyle = constants.pprStyles.get(RE_Ementa)
-  override def ementaCharStyle = constants.rprStyles.get(RE_Ementa)
-  override def preambuloParStyle = constants.pprStyles.get(RE_Preambulo)
-  override def preambuloCharStyle = constants.rprStyles.get(RE_Preambulo)
-  override def formulaPromulgacaoParStyle = constants.pprStyles.get(RE_FormulaPromulgacao)
-  override def formulaPromulgacaoCharStyle = constants.rprStyles.get(RE_FormulaPromulgacao)
-  override def textoAlteracaoRPrStyle = constants.rprStyles.get(RE_TextoAlteracao)  
-  override def indentAlteracao = constants.indentAlteracao            
-  override def rotuloStyleRPrForDispositivo(t : TipoDispositivo) = RE_RotuloDispositivo(t)(constants.rprStyles)
-  override def contentStyleRPrForDispositivo(t : TipoDispositivo) = RE_ConteudoDispositivo(t)(constants.rprStyles)    
-  override def contentStylePPrForDispositivo(t : TipoDispositivo) = RE_RotuloDispositivo(t)(constants.pprStyles)
-  override def nomeAgrupadorPredefIniciaisMaiusc(tipo : TipoAgrupadorPredef) =
-    constants.iniciaisMaiusculas.contains(RE_NomeAgrupador(tipo))
-  override def tituloStylePPrForDispositivo(t : TipoDispositivo) = RE_TituloDispositivo(t)(constants.pprStyles)
-  override def tituloStyleRPrForDispositivo(t : TipoDispositivo) = RE_TituloDispositivo(t)(constants.rprStyles)
-  override def localDataFechoStylePPr = constants.pprStyles.get(RE_LocalDataFecho)
-  override def localDataFechoStyleRPr = constants.rprStyles.get(RE_LocalDataFecho)
-  override def assinaturaTextoStylePPr = constants.pprStyles.get(RE_AssinaturaTexto)
-  override def assinaturaTextoStyleRPr = constants.rprStyles.get(RE_AssinaturaTexto)
-  override def notaReferenciadaRPrStyle = constants.rprStyles.get(RE_NotaReferenciada)
+  override def epigrafeParStyle: Option[PPr] = constants.pprStyles.get(RE.Epigrafe)
+  override def epigrafeCharStyle: Option[RPr] = constants.rprStyles.get(RE.Epigrafe)
+  override def ementaParStyle: Option[PPr] = constants.pprStyles.get(RE.Ementa)
+  override def ementaCharStyle: Option[RPr] = constants.rprStyles.get(RE.Ementa)
+  override def preambuloParStyle: Option[PPr] = constants.pprStyles.get(RE.Preambulo)
+  override def preambuloCharStyle: Option[RPr] = constants.rprStyles.get(RE.Preambulo)
+  override def formulaPromulgacaoParStyle: Option[PPr] = constants.pprStyles.get(RE.FormulaPromulgacao)
+  override def formulaPromulgacaoCharStyle: Option[RPr] = constants.rprStyles.get(RE.FormulaPromulgacao)
+  override def textoAlteracaoRPrStyle: Option[RPr] = constants.rprStyles.get(RE.TextoAlteracao)
+  override def indentAlteracao: Ind = constants.indentAlteracao
+  override def rotuloStyleRPrForDispositivo(t : TipoDispositivo): Option[RPr] = RE.RotuloDispositivo(t)(constants.rprStyles)
+  override def contentStyleRPrForDispositivo(t : TipoDispositivo): Option[RPr] = RE.ConteudoDispositivo(t)(constants.rprStyles)
+  override def contentStylePPrForDispositivo(t : TipoDispositivo): Option[PPr] = RE.RotuloDispositivo(t)(constants.pprStyles)
+  override def nomeAgrupadorPredefIniciaisMaiusc(tipo : TAP): Boolean =
+    constants.iniciaisMaiusculas.contains(RE.NomeAgrupador(tipo))
+  override def tituloStylePPrForDispositivo(t : TipoDispositivo): Option[PPr] = RE.TituloDispositivo(t)(constants.pprStyles)
+  override def tituloStyleRPrForDispositivo(t : TipoDispositivo): Option[RPr] = RE.TituloDispositivo(t)(constants.rprStyles)
+  override def localDataFechoStylePPr: Option[PPr] = constants.pprStyles.get(RE.LocalDataFecho)
+  override def localDataFechoStyleRPr: Option[RPr] = constants.rprStyles.get(RE.LocalDataFecho)
+  override def assinaturaTextoStylePPr: Option[PPr] = constants.pprStyles.get(RE.AssinaturaTexto)
+  override def assinaturaTextoStyleRPr: Option[RPr] = constants.rprStyles.get(RE.AssinaturaTexto)
+  override def notaReferenciadaRPrStyle: Option[RPr] = constants.rprStyles.get(RE.NotaReferenciada)
   
   override def endnoteId(origId : String) : String = 
     endnoteIdMap(origId)
     
-  override def skipHyperlink = constants.skipHyperlink
-}
+  override def skipHyperlink: Boolean = constants.skipHyperlink
+end RendererState
 
-object RendererState {
-  implicit val mergeable = new Mergeable2[RendererState,RendererState] {
-    override def merge(a : RendererState, b : RendererState) =
+object RendererState:
+  given mergeable: Mergeable2[RendererState, RendererState] = new Mergeable2[RendererState,RendererState]:
+    override def merge(a : RendererState, b : RendererState): RendererState =
       RendererState(
           base = a.base,
           hrefNext = b.hrefNext,
@@ -263,43 +249,37 @@ object RendererState {
           constants = a.constants,
           endnoteRefs = a.endnoteRefs ++ b.endnoteRefs,
           endnoteIdMap = a.endnoteIdMap ++ b.endnoteIdMap)
-    def extract(a : RendererState) = a                          
-  }
-}
+    def extract(a : RendererState): RendererState = a
 
 class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState] with ParBuilderOps[RendererState]
   with DocxCompSeqBuilderOps[RendererState] {
-  val logger = LoggerFactory.getLogger("br.gov.lexml.renderer.docx.renderers")
+  val logger: Logger = LoggerFactory.getLogger("br.gov.lexml.renderer.docx.renderers")
   
   type RunRenderer[A] = PB[A] 
   
   type ParRenderer[A] = MB[A]
   
   import RendererState.mergeable
-      
-       
-  def rotulo(r : Rotulo, rPr : Option[RPr] = None, extraSpace : Boolean = false) : RunRenderer[Unit] = {
-    val suffix = if (extraSpace) { " " }  else { "" }
+
+  def rotulo(r : Rotulo, rPr : Option[RPr] = None, extraSpace : Boolean = false) : RunRenderer[Unit] =
+    val suffix = if extraSpace then " " else ""
     runM_(rPr)(text(r.rotulo + suffix))
-  }
-    
-  
-  def omissis : RunRenderer[Unit] = {
-    runM_()(tab) 
-  }
+
+  def omissis : RunRenderer[Unit] = runM_()(tab)
                 
   def parOmissis(x : Omissis) : ParRenderer[Unit] = 
     aspasP(x.abreAspas,x.fechaAspas,x.notaAlteracao) {
-    for {
-      style <- inspectMDState(_.omissisParStyle)      
-      _ <- parM(style)(omissis)
-    } yield ()
-  }            
+      for {
+        style <- inspectMDState(_.omissisParStyle)
+        _ <- parM(style)(omissis)
+      } yield ()
+    }
   
   def agrupadorGenerico(ag : AgrupadorGenerico) : ParRenderer[Unit] = 
     modifyMDState(_.addUnsupported("agrupadorGenerico: não suportado: ",ag))
     
-  def agrupadorPredef(ag : AgrupadorPredef) : ParRenderer[Unit] = 
+  def agrupadorPredef(ag : AgrupadorPredef) : ParRenderer[Unit] =
+    import implicits.ifDef
     aspasP(ag.abreAspas,ag.fechaAspas,ag.notaAlteracao) {      
         for {    
           nomeAgrupadorPPrStyle <- inspectMDState(_.nomeAgrupadorPredefPPrStyle(ag.tipoAgrupador))        
@@ -351,7 +331,7 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
         if (!sh) { for {
           base <- inspectPState(_.getBase) 
           href = base.map(_.resolve(r.href.uri)).getOrElse(r.href.uri)
-          lexmlPortalLink = new java.net.URL(config.getLinkTemplate.format(href)).toURI
+          lexmlPortalLink = java.net.URL(config.getLinkTemplate.format(href)).toURI
           hd <- modifyPStateV(_.addRef(lexmlPortalLink))
           rPr <- inspectPState(_.getHyperlinkRPr)
           _ <- withStyleRunRenderer(rPr)(hyperlink(id = Some(hd.id),anchor=hd.anchor,tooltip=hd.tooltip)(inlineSeq(r.inlineSeq)))  
@@ -399,13 +379,13 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
   
   def genHtmlInlineElement(ge : GenHtmlInlineElement) : RunRenderer[Unit] = 
     ge.tipoHtmlInlineElement match {
-      case TGHIE_B => boldened(inlineSeq(ge.inlineSeq))
-      case TGHIE_I => italicized(inlineSeq(ge.inlineSeq))
-      case TGHIE_Sub => inSubscript(inlineSeq(ge.inlineSeq))
-      case TGHIE_Sup => inSuperscript(inlineSeq(ge.inlineSeq))      
-      case TGHIE_Ins => insertion(ge)         
-      case TGHIE_Del => deletion(ge)
-      case TGHIE_Dfn => definition(ge)
+      case TGHIE.B => boldened(inlineSeq(ge.inlineSeq))
+      case TGHIE.I => italicized(inlineSeq(ge.inlineSeq))
+      case TGHIE.Sub => inSubscript(inlineSeq(ge.inlineSeq))
+      case TGHIE.Sup => inSuperscript(inlineSeq(ge.inlineSeq))
+      case TGHIE.Ins => insertion(ge)
+      case TGHIE.Del => deletion(ge)
+      case TGHIE.Dfn => definition(ge)
     }     
   
   def runWithRPrChange[A](f : RPr => RPr)(rr : RunRenderer[A]) : RunRenderer[A] = 
@@ -424,10 +404,10 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     runWithRPrChange(_.copy(italics = Some(true)))(rr)
     
   def inSubscript[T](rr : RunRenderer[T]) : RunRenderer[T] = 
-    runWithRPrChange(_.copy(vertAlign = Some(VA_Subscript)))(rr)
+    runWithRPrChange(_.copy(vertAlign = Some(VA.Subscript)))(rr)
   
   def inSuperscript[T](rr : RunRenderer[T]) : RunRenderer[T] = 
-    runWithRPrChange(_.copy(vertAlign = Some(VA_Superscript)))(rr)
+    runWithRPrChange(_.copy(vertAlign = Some(VA.Superscript)))(rr)
       
   def insertion(x : GenHtmlInlineElement) : RunRenderer[Unit] =  
     modifyPState(_.addUnsupported("insertion(GenHtmlInlineElement)",x))
@@ -501,14 +481,16 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     } yield (())
   }  
   
-  def lexmlDocument(doc : SomeLexmlDocument) : ParRenderer[Unit] = {    
-    documentContents(doc.contents)
-  }
+  def lexmlDocument(doc : SomeLexmlDocument) : ParRenderer[Unit] =
+    documentContents(doc.value.contents)
+
+  def lexmlDocument(doc: DocumentContents[_]): ParRenderer[Unit] =
+    documentContents(doc)
+
     
-  def documentContents(contents : DocumentContents[T] forSome { type T <: DocumentContents[T] }) : ParRenderer[Unit] = contents match {
+  def documentContents(contents : DocumentContents[_]) : ParRenderer[Unit] = contents match {
     case n : Norma => norma(n)
     case pj : ProjetoNorma => projetoNorma(pj)
-    case x => modifyMDState(_.addUnsupported("documentContents: não suportado",x))
   }
   
   def parTexto(rPr : Option[RPr] = None)(txt : String) : ParRenderer[Unit] = 
@@ -547,8 +529,8 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
   }
   
   
-  def alteracaoElement(a : AlteracaoElement) : ParRenderer[Unit] = {             
-      val inside = a match {      
+  def alteracaoElement(a : AlteracaoElement) : ParRenderer[Unit] =
+      a match {
         case x : BlockElement => blockElement(x)
         case x : Container => container(x)
         case x : FormulaPromulgacao => formulaPromulgacao(x)
@@ -557,18 +539,11 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
         case x : Preambulo => preambulo(x)
         case x : HierarchicalElement => hierarchicalElement(x)
         case x : LXContainer => lxContainer(x,false)
-        case _ => modifyMDState(_.addUnsupported("alteracaoElement: não suportado",a))
-      }   
-      inside
-      //aspasP(a.abreAspas,a.fechaAspas,a.notaAlteracao)(inside)      
-    }
-  
-  
-  
+      }
+
   def lxContainer(lc : LXContainer,skipFirst : Boolean) : ParRenderer[Unit] = lc match {
       case d : Dispositivo => dispositivo(d,skipFirst)
       case o : Omissis => if (skipFirst) { State.pure(()) } else { parOmissis(o) }
-      case _ => modifyMDState(_.addUnsupported("lxContainer: não suportado",lc))
     }
     
   def dispositivo(d : Dispositivo, skipFirst : Boolean) : ParRenderer[Unit] = d match {
@@ -580,9 +555,9 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
   def dispositivoGenerico(d : DispositivoGenerico, skipFirst : Boolean) : ParRenderer[Unit] =
     aspasP(d.abreAspas,d.fechaAspas,d.notaAlteracao) {
     for {
-      rotuloRPr <- rPrRotuloForDispositivo(TDP_Pena,d.rotulo)
-      contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(TDP_Pena))
-      contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(TDP_Pena))
+      rotuloRPr <- rPrRotuloForDispositivo(TDP.Pena,d.rotulo)
+      contentRPr <- inspectMDState(_.contentStyleRPrForDispositivo(TDP.Pena))
+      contentPPr <- inspectMDState(_.contentStylePPrForDispositivo(TDP.Pena))
       (firstInlineSeq ,restInlineSeqs)  = (d.conteudo match {
           case None => (State.pure(()),List())
           case Some(t : TextoDispositivo) => (
@@ -629,12 +604,12 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
       r1.flatMap(x => r2.flatMap(y => Some(x + y)).orElse(Some(x))).orElse(r2)
     } 
   
-  def rPrRotuloForDispositivo(t : TipoDispositivoPredef,r : Option[Rotulo]) : ParRenderer[Option[RPr]] =
+  def rPrRotuloForDispositivo(t : TDP,r : Option[Rotulo]) : ParRenderer[Option[RPr]] =
     inspectMDState(_.rotuloStyleRPrForDispositivo(t))
     /* for {
     rotuloRPr <- inspectMDState(_.rotuloStyleRPrForDispositivo(t))  
     rPr = t match {
-      case TDP_Paragrafo if r.map(_.rotulo.trim.contains("nico")).getOrElse(false) => 
+      case TDP.Paragrafo if r.map(_.rotulo.trim.contains("nico")).getOrElse(false) =>
         Some(rotuloRPr.getOrElse(RPr()).copy(italics = Some(true), bold = Some(true)))
       case _ => rotuloRPr
     }    
@@ -667,8 +642,8 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
         parM(contentPPr)(withStyleRunRenderer(contentRPr)(inlineSeq(p)))
       tail1 = mapM_(tail)(rendPar)
       firstPart = head.flatMap { _ => mapM_(tail)(rendPar) }
-      tituloPPr <- inspectMDState(_.tituloStylePPrForDispositivo(TDP_Artigo/*d.tipoDispositivo*/))
-      tituloRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(TDP_Artigo/*d.tipoDispositivo*/))
+      tituloPPr <- inspectMDState(_.tituloStylePPrForDispositivo(TDP.Artigo/*d.tipoDispositivo*/))
+      tituloRPr <- inspectMDState(_.tituloStyleRPrForDispositivo(TDP.Artigo/*d.tipoDispositivo*/))
       _ <- d.titulo.ifDef(t => parM(tituloPPr)(withStyleRunRenderer(tituloRPr)(inlineSeq(t.inlineSeq))))
       _ <- firstPart
       _ <- d.alteracao.ifDef(alteracao)
@@ -719,7 +694,7 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
       case OmissisSimples => (omissis,true)        
       } : PartialFunction[ConteudoDispositivo,(RunRenderer[Unit],Boolean)])
     val (conteudo,skipFirst,contFechaAspas,contNotaAlteracao) = (a.containers.head match {      
-          case d : DispositivoPredefNA if d.tipoDispositivo == TDP_Caput => 
+          case d : DispositivoPredefNA if d.tipoDispositivo == TDP.Caput =>
             val (ct,skip) = d.conteudo.collect(selectFirst).getOrElse((State.pure(()),false)) : (RunRenderer[Unit],Boolean)
             (ct,skip,d.fechaAspas,d.notaAlteracao)
           case _ => (State.pure(()),false,false,None)
@@ -767,7 +742,6 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     case x : Paragraph => paragraph(x)
     case x : HTMLList => htmlList(x)
     case x : Table => table(x)
-    case _ => modifyMDState(_.addUnsupported("htmlBlock: não suportado: ",b))
   }
   
   def paragraph(p : Paragraph) : ParRenderer[Unit] = 
@@ -838,11 +812,11 @@ final case class MainDocRendererResult(
 
 class WordMarker(regex : String, change : RPr => RPr) {    
   import br.gov.lexml.renderer.docx.docxmodel._  
-  val exprRe = regex.r  
+  private val exprRe = regex.r
       
   def fRunContentContainer(x : RunContent) : Seq[RunContent] = x match {
-    case x : ParElementContainer[RunContent] => Seq(x.flatMap(fParElementContainer))
-    case x : RunContentContainer[RunContent] => Seq(x.flatMap(fRunContentContainer))   
+    case x : Ins => Seq(x.flatMap(fParElementContainer))
+    case x : Del => Seq(x.flatMap(fParElementContainer))
     case x => Seq(x)
   }
   
@@ -857,41 +831,37 @@ class WordMarker(regex : String, change : RPr => RPr) {
   }
 
   def fParElementContainer(before : Option[ParElement],x : ParElement, next: Option[ParElement]) : Seq[ParElement]  = x match {
-    case x : R => {
+    case x : R =>
       val l : Seq[Either[(T,Seq[(Int,Int)]),RunContent]] = x.contents.collect {
         case t : T =>
           val matches = exprRe.findAllMatchIn(t.text).to(Seq).map { m =>
               (m.start,m.end) }
-          if(matches.isEmpty) { Right(t) }
-          else { Left(t,matches) }              
+          if matches.isEmpty then Right(t) else Left(t,matches)
         case t => Right(t)
       }
       var lastHadSpace : Boolean = false
       val pl : Seq[ParElement] = l.flatMap { 
         case Right(t) =>
-          val t1 = if(lastHadSpace) { trimLeft(t) } else { t }
+          val t1 = if lastHadSpace then trimLeft(t) else t
           lastHadSpace = hasTrailingSpace(t1)
           Seq(x.copy(contents = Seq(t1)))
-        case Left((t,matches)) => {          
+        case Left((t,matches)) =>
           //DEBUG: start
           val doDebug = false //t.text.startsWith("regimento interno")
-          def debug(msg : => String) = if (doDebug) { println("fParElementContainer: " + msg) } else { }
+          def debug(msg : => String) : Unit = if doDebug then println("fParElementContainer: $msg")
           //DEBUG: end
 
-          debug(s"""t = ${t}, matches=${matches}, next = ${next}""")
+          debug(s"""t = $t, matches=$matches, next = $next""")
           val b = Seq.newBuilder[R]
           var last : Int = 0
           lazy val newRPr = Some(change(x.rPr.getOrElse(RPr())))
-          def passthrough(start : Int) : Unit = {
-            debug(s"""passthrough: start = ${start}, next = ${next}""")
+          def passthrough(start : Int) : Unit =
+            debug(s"""passthrough: start = $start, next = $next""")
             val mayAddWSatEnd = start < t.text.length ||
                                 next.isDefined
-            if(start > last) {              
+            if start > last then
               val t1 = t.text.substring(last,start)
               val tb = Seq.newBuilder[T]
-              /*val tl = if(t1.charAt(0).isWhitespace && last > 0) {
-                tb += T(" ",preserveSpace=true)                
-              }*/
               val t2 = t1.replaceAll("\\p{Space}+$"," ")
                          .replaceAll(" +"," ")
               debug(s"""t2 = "${t2}" """)
@@ -900,13 +870,8 @@ class WordMarker(regex : String, change : RPr => RPr) {
               tb += T(t4, preserveSpace=true)
               lastHadSpace = t4.matches("\\p{Space}$")
               debug(s"""t4="${t4}" """)
-              /*if(mayAddWSatEnd && t2.last.isWhitespace) {
-                tb += T(" ",preserveSpace=true)
-                t
-              }*/
               b += x.copy(contents = tb.result())
-            }
-          }
+          end passthrough
           for { 
             (start,end) <- matches
           } {
@@ -916,12 +881,10 @@ class WordMarker(regex : String, change : RPr => RPr) {
             last = end
           }
           passthrough(t.text.length)
-          b.result()          
-        }
+          b.result()
       }
       pl
-    }
-    case x : ParElementContainer[ParElement] => Seq(x.flatMap(fParElementContainer))
+    //case x : ParElementContainer[ParElement] => Seq(x.flatMap(fParElementContainer))
     //case x : RunContentContainer[ParElement] => Seq(x.flatMap(fRunContentContainer))
     case x => Seq(x)
   }
@@ -935,33 +898,31 @@ class WordMarker(regex : String, change : RPr => RPr) {
     x.flatMap(apply)
 }
 
-object WordMarker {  
-  def makeOr(exprs : Seq[String]) = exprs.map(x => "(?:" + x + ")").mkString("|")
+object WordMarker:
+  def makeOr(exprs : Seq[String]): String = exprs.map(x => "(?:" + x + ")").mkString("|")
     
   val AddItalics : RPr => RPr = _.copy(italics = Some(true))
-  val AddBold : RPr => RPr = _.copy(bold = Some(true))                 
-}
+  val AddBold : RPr => RPr = _.copy(bold = Some(true))
 
 final case class MainDocRenderer(constants : Constants = Constants(), baseDocx : Docx = Docx(),
-                                 config : LexmlToDocxConfig) {
-  
-  val st0 = RendererState(constants = constants, endnoteIdMap = Map("aaa" -> "bbb"))
+                                 config : LexmlToDocxConfig):
+  val st0: RendererState = RendererState(constants = constants, endnoteIdMap = Map("aaa" -> "bbb"))
     
   val reformatRules : Seq[(String,RPr => RPr)] = Seq(
       WordMarker.makeOr(constants.expressoesEmBold.to(Seq)) -> WordMarker.AddBold
       )
 
-  val renderers = new Renderers(config)
-  def makeEndnotes(doc : SomeLexmlDocument, notas : Seq[(Int,Option[String],Nota)]) : 
+  val renderers = Renderers(config)
+  def makeEndnotes(notas : Seq[(Int,Option[String],Nota)]) :
     (Seq[(String,Seq[DocxTextComponent])],Seq[String],Map[String,String]) = {
-    val orphans = notas.collect { case (seq,None,_) => seq.toString }.to(Seq)    
-    val endnotes = notas.map { case (seq,_,nota) =>      
+    val orphans = notas.collect { (seq,None,_) => seq.toString }.to(Seq)
+    val endnotes = notas.map { (seq,_,nota) =>
       val contentsM = for {
         _ <- mapM_(nota.contents)(renderers.paragraph)
       } yield ()
       val contents = contentsM.makeDocxCompSeq(st0).value._1
       val contents1 = reformatRules.foldLeft(contents) { case (d,(regex,change)) =>
-        d.flatMap { x => new WordMarker(regex,change)(x) }
+        d.flatMap { x => WordMarker(regex,change)(x) }
       }
       (seq.toString,contents1)
     }
@@ -971,34 +932,30 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
       }.toMap    
     (endnotes,orphans,idToSeq)
   }
-      
-  def render(doc : SomeLexmlDocument) : MainDocRendererResult = {
-    val notas = doc.metadado.notas.zipWithIndex.map { case (nota,idx) =>
+
+  def render(doc: LexmlDocument[_]): MainDocRendererResult =
+    val notas = doc.metadado.notas.zipWithIndex.map { (nota,idx) =>
       (idx+1,nota.id,nota)
     }
     
-    val (endnotes,orphans,idToSeq) = makeEndnotes(doc,notas)
-    
-    val doc1 = 
-      if(!orphans.isEmpty) {        
-        doc.copy(contents = doc.contents.mapNorma { norma => 
-          val epigrafe = norma.contents.epigrafe.map { ep =>
-            val elems1 = ep.inlineSeq.mixedElems.elems ++
-                     orphans.map { id => Left(NotaReferenciada(IDREF(id))) }            
-            ep.copy(inlineSeq = ep.inlineSeq.copy(mixedElems = Mixed(elems1)))
-          }
-          norma.copy(contents = norma.contents.copy(epigrafe = epigrafe))          
-        })        
-      } else { 
-        doc
-      }
-    
+    val (endnotes,orphans,idToSeq) = makeEndnotes(notas)
+
+    val contents = if orphans.nonEmpty then
+      doc.contents.mapNorma { norma =>
+        val epigrafe = norma.contents.epigrafe.map { ep =>
+          val elems1 = ep.inlineSeq.mixedElems.elems ++
+            orphans.map { id => Left(NotaReferenciada(IDREF(id))) }
+          ep.copy(inlineSeq = ep.inlineSeq.copy(mixedElems = Mixed(elems1)))
+        }
+        norma.copy(contents = norma.contents.copy(epigrafe = epigrafe))
+      } else doc.contents
+
     val st0_1 = st0.copy(endnoteIdMap = idToSeq)
 
-    val (d,st1) = renderers.lexmlDocument(doc1).makeMainDoc(st0_1).value
+    val (d,st1) = renderers.lexmlDocument(contents).makeMainDoc(st0_1).value
     val d1 = d.copy(d.contents.filterNot(_.isEmpty))           
     val d2 = reformatRules.foldLeft(d1) { case (d,(regex,change)) =>
-      new WordMarker(regex,change)(d)
+      WordMarker(regex,change)(d)
     }
     
     val docx = baseDocx.copy(mainDoc = d2, hyperlinks = st1.hrefToHrefData.values.to(Seq),
@@ -1006,30 +963,27 @@ final case class MainDocRenderer(constants : Constants = Constants(), baseDocx :
     MainDocRendererResult(
         docx=docx,        
         unsupportedCases = st1.unsupportedCases)
-  }
-}
+  end render
+end MainDocRenderer
 
-object PackageRenderer {
+object PackageRenderer:
   private def logger = LoggerFactory.getLogger(classOf[PackageRenderer])
   type ReplaceFunc = Option[Array[Byte]] => Option[Array[Byte]]
-  def xmlToByteArray(e : scala.xml.Elem) = {
-    import java.io._
-    import scala.xml._
-    val w = new StringWriter()
+  def xmlToByteArray(e : scala.xml.Elem): Array[Byte] =
+    import java.io.*
+    import scala.xml.*
+    val w = StringWriter()
     XML.write(w,e,"utf-8",true,null,MinimizeMode.Always)
     w.close()
-    w.toString().getBytes("utf-8")
-  }
-}
+    w.toString.getBytes("utf-8")
 
-class PackageRenderer(config : LexmlToDocxConfig) {
-
-  import PackageRenderer._  
+class PackageRenderer(config : LexmlToDocxConfig):
+  import PackageRenderer.*
   
-  private lazy val referenceEntries = {
-    import java.io._
-    import java.util.zip._
-    val zis = new ZipInputStream(new ByteArrayInputStream(config.referenceDocx))
+  private lazy val referenceEntries =
+    import java.io.*
+    import java.util.zip.*
+    val zis = ZipInputStream(new ByteArrayInputStream(config.referenceDocx))
     val b = Map.newBuilder[String,Array[Byte]]
     var ze : ZipEntry = zis.getNextEntry()
     while(ze != null) {
@@ -1040,25 +994,24 @@ class PackageRenderer(config : LexmlToDocxConfig) {
     }
     zis.close()
     b.result()
-  }
     
-  private def writeReplace(transf : (String,ReplaceFunc)*) : Array[Byte] = {    
-    import java.io._
-    import java.util.zip._
+  private def writeReplace(transf : (String,ReplaceFunc)*) : Array[Byte] =
+    import java.io.*
+    import java.util.zip.*
     val m : Map[String,ReplaceFunc] =
       transf.groupBy(_._1).view.mapValues { l =>
         val l1 = l.map(_._2)
-        val f = l1.foldLeft((x => x) : ReplaceFunc) { case(sofar,f) => { x => sofar(f(x)) } }
+        val f = l1.foldLeft((x => x) : ReplaceFunc) { (sofar,f) => { x => sofar(f(x)) } }
         f
       }.toMap
     
     //transf.toMap
-    val bos = new ByteArrayOutputStream()
-    val zos = new ZipOutputStream(bos)
-    val m1 = referenceEntries ++ m.flatMap{ case (k,f) =>
+    val bos = ByteArrayOutputStream()
+    val zos = ZipOutputStream(bos)
+    val m1 = referenceEntries ++ m.flatMap{ (k,f) =>
       f(referenceEntries.get(k)).map(d => (k,d)) }      
-    m1.foreach { case (name,data) =>
-      val ze = new ZipEntry(name)
+    m1.foreach { (name,data) =>
+      val ze = ZipEntry(name)
       ze.setSize(data.length)
       zos.putNextEntry(ze)
       zos.write(data)
@@ -1066,32 +1019,30 @@ class PackageRenderer(config : LexmlToDocxConfig) {
     }
     zos.close()        
     bos.toByteArray
-  }
-  
-  
-       
-  private lazy val stylesElem = DefaultStyles.styles.asXML  //  DocxMainPartRenderer.stylesElem
-  
-  def render(doc : SomeLexmlDocument,
-      extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] = {    
+  end writeReplace
+
+  lazy val stylesElem: Elem = DefaultStyles.styles.asXML  //  DocxMainPartRenderer.stylesElem
+
+  def render(doc: SomeLexmlDocument,
+             extraReplace: Seq[(String, PackageRenderer.ReplaceFunc)]): Array[Byte] =
+    render(doc.value,extraReplace)
+  def render(doc : LexmlDocument[_],
+      extraReplace : Seq[(String,PackageRenderer.ReplaceFunc)] = Seq()) : Array[Byte] =
     val baseDocx = Docx(
         baseRelationships =
           referenceEntries.get("word/_rels/document.xml.rels").map { f =>            
             Relationships.fromByteArray(f)
           }.getOrElse(Relationships())
         )    
-        
-        
-    val renderer = new MainDocRenderer(Constants.default,baseDocx,config)
+
+    val renderer = MainDocRenderer(Constants.default,baseDocx,config)
     val res = renderer.render(doc)
-    res.unsupportedCases.foreach { case (msg,x) =>
-      logger.warn("Caso não suportado pelo renderer: " + msg + "\n" + x.toString)       
+    res.unsupportedCases.foreach { (msg,x) =>
+      logger.warn(s"Caso não suportado pelo renderer: $msg\n$x")
     }        
     def subst(v : Array[Byte]) : ReplaceFunc = _ => Some(v)
     val files = res.docx.files
     val replaceFuncs = files.view.mapValues { subst }.to(Seq)  ++ extraReplace
-    writeReplace(replaceFuncs :_*)
-  }
-}
-
-
+    writeReplace(replaceFuncs*)
+  end render
+end PackageRenderer
