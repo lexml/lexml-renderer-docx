@@ -378,13 +378,24 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     } yield (()))
           
     
-  def ementa(e : Ementa) : ParRenderer[Unit] =
-    aspasP(e.abreAspas,e.fechaAspas,e.notaAlteracao)(
+  def ementa(e : Ementa, emAlteracao : Boolean) : ParRenderer[Unit] =
+    if(emAlteracao) {
+      ementaEmAlteracao(e)
+    } else {
+      ementaForaDeAlteracao(e)
+    }
+
+  def ementaEmAlteracao(e: Ementa): ParRenderer[Unit] =
+    aspasP(e.abreAspas, e.fechaAspas, e.notaAlteracao)(
+      parM()(inlineSeq(e.inlineSeq))
+    )
+
+  def ementaForaDeAlteracao(e: Ementa): ParRenderer[Unit] =
     for {
       pPr <- inspectMDState(_.ementaParStyle)
       rPr <- inspectMDState(_.ementaCharStyle)
       _ <- parM(pPr)(withStyleRunRenderer(rPr)(inlineSeq(e.inlineSeq)))
-    } yield (())) 
+    } yield (())
     
   def preambulo(pb : Preambulo) : ParRenderer[Unit] =
     aspasP(pb.abreAspas,pb.fechaAspas,pb.notaAlteracao)(
@@ -493,7 +504,7 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     for {
       _ <- hs.formulaPromulgacao.ifDef(formulaPromulgacao)
       _ <- hs.epigrafe.ifDef(epigrafe)
-      _ <- hs.ementa.ifDef(ementa)
+      _ <- hs.ementa.ifDef(ementa(_,false))
       _ <- hs.preambulo.ifDef(preambulo)
       _ <- articulacao(hs.articulacao)
       _ <- hs.localDataFecho.ifDef(localDataFecho)
@@ -553,7 +564,7 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
         case x : Container => container(x)
         case x : FormulaPromulgacao => formulaPromulgacao(x)
         case x : Epigrafe => epigrafe(x)
-        case x : Ementa => ementa(x)
+        case x : Ementa => ementa(x,true)
         case x : Preambulo => preambulo(x)
         case x : HierarchicalElement => hierarchicalElement(x)
         case x : LXContainer => lxContainer(x,false)

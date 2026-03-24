@@ -9,7 +9,7 @@
 
 	<properties>
 		<scala.version>2.13</scala.version>
-		<scala.lib.version>${scala.version}.10</scala.lib.version>
+		<scala.lib.version>${scala.version}.18</scala.lib.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>
@@ -38,11 +38,11 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>ossrh</id>
+            <id>central</id>
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh</id>
+            <id>central</id>
             <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
@@ -55,10 +55,10 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.10.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
 			<plugin>
@@ -178,21 +178,21 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.3.1</version>
                 <configuration>
                     <detail>true</detail>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
               <plugin>
-                  <groupId>org.sonatype.plugins</groupId>
-                  <artifactId>nexus-staging-maven-plugin</artifactId>
-                  <version>1.6.13</version>
+                  <groupId>org.sonatype.central</groupId>
+                  <artifactId>central-publishing-maven-plugin</artifactId>
+                  <version>0.9.0</version>
                   <extensions>true</extensions>
-                  <configuration>
-                      <serverId>ossrh</serverId>
-                      <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                      <autoReleaseAfterClose>true</autoReleaseAfterClose>
+		  <configuration>
+			  <publishingServerId>central</publishingServerId>	 
+			  <autoPublish>true</autoPublish>
+		          <waitUntil>published</waitUntil>
                   </configuration>
               </plugin>
             <plugin>
@@ -211,6 +211,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
+	    <version>3.4.2</version>
             <executions>
                 <execution>
                     <id>empty-javadoc-jar</id>
