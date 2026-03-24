@@ -252,7 +252,7 @@ final case class RendererState(
 }
 
 object RendererState {
-  implicit val mergeable = new Mergeable2[RendererState,RendererState] {
+  implicit val mergeable : Mergeable2[RendererState,RendererState] = new Mergeable2[RendererState,RendererState] {
     override def merge(a : RendererState, b : RendererState) =
       RendererState(
           base = a.base,
@@ -386,7 +386,7 @@ class Renderers(config : LexmlToDocxConfig) extends RunBuilderOps[RendererState]
     }
 
   def ementaEmAlteracao(e: Ementa): ParRenderer[Unit] =
-    aspasP(e.abreAspas, e.fechaAspas, e.notaAlteracao)(
+    aspasP(true, true, None)(
       parM()(inlineSeq(e.inlineSeq))
     )
 

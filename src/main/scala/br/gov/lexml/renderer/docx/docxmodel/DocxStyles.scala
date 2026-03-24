@@ -17,7 +17,7 @@ final case class StyleOptField[T](
 }
 
 object StyleOptField {
-  implicit def sofOrdering[T] = new Ordering[StyleOptField[T]] {
+  implicit def sofOrdering[T] : Ordering[StyleOptField[T]] = new Ordering[StyleOptField[T]] {
     def compare(x: StyleOptField[T], y: StyleOptField[T]): Int =
       x.ft.compareTo(y.ft)
 
